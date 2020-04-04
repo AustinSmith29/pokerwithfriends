@@ -1,0 +1,15 @@
+{
+  "name": "pokerparty",
+  "version": "1.0.0",
+  "description": "An online peer to peer poker web application for private game hosting.",
+  "main": "app.js",
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "^7.1.1"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Austin Smith",
+  "license": "ISC"
+}
