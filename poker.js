@@ -1,4 +1,4 @@
-exports.Card = (r, s) => ({rank: r, suit: s});
+const Card = (r, s) => ({rank: r, suit: s});
 
 const HandRankings = Object.freeze({
     HIGH: 1,
@@ -35,9 +35,9 @@ const count = (elem, arry) => {
 const handRanks = (hand) => hand.map(card => card.rank);
 const handSuits = (hand) => hand.map(card => card.suit);
 
-exports.isPair = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 2; 
-const isTwoPair = (hand) => count(2, hand.map(card => count(card, hand))) === 4;
-const isThreeOfKind = (hand) => Math.max(...hand.map(card => count(card, hand))) === 3;
+const isPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 2; 
+const isTwoPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
+const isThreeOfKind = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 3;
 const isStraight = (hand) => {
     const handRanks = hand.map(card => card.rank);
     if (handRanks.find(rank => rank === Ranks.ACE)) {
@@ -55,9 +55,9 @@ const isStraight = (hand) => {
     }
     return true;
 };
-const isFlush = (hand) => count(hand[0].suit, hand.map(card => card.suit)) === 5;
+const isFlush = (hand) => count(hand[0].suit, handSuits(hand)) === 5;
 const isFullHouse = (hand) => isPair(hand) && isThreeOfKind(hand);
-const isFourOfKind = (hand) => Math.max(...hand.map(card => count(card, hand))) === 4;
+const isFourOfKind = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
 const isStraightFlush = (hand) => isStraight(hand) && isFlush(hand);
 
 const classifyHand = (hand) => undefined;
@@ -73,3 +73,13 @@ const createDeck = () => {
     }
     return deck;
 };
+
+exports.isPair = isPair;
+exports.isTwoPair = isTwoPair;
+exports.isThreeOfKind = isThreeOfKind;
+exports.isStraight = isStraight;
+exports.isFlush = isFlush;
+exports.isFullHouse = isFullHouse;
+exports.isFourOfKind = isFourOfKind;
+exports.isStraightFlush = isStraightFlush;
+exports.Card = Card;
