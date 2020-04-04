@@ -35,6 +35,10 @@ const count = (elem, arry) => {
 const handRanks = (hand) => hand.map(card => card.rank);
 const handSuits = (hand) => hand.map(card => card.suit);
 
+/* These tests must be applied to hand in decreasing order of strength i.e straight flushes before four of kind... etc
+ * This is because each function checks for only minimum viability. For example, isThreeOfKind will return true
+ * if it is passed a Full House because it detects three of the same cards.
+*/
 const isPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 2; 
 const isTwoPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
 const isThreeOfKind = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 3;
@@ -45,7 +49,7 @@ const isStraight = (hand) => {
         // If a king is in the hand then it has to be treated as a 13 to make a straight.
         const isKingInHand = handRanks.includes(Ranks.KING);
         let aceValue = (isKingInHand) ? Ranks.ACE : 0;
-        handRanks[handRancks.indexOf(Ranks.ACE)] = aceValue;
+        handRanks[handRanks.indexOf(Ranks.ACE)] = aceValue;
     }
     handRanks.sort((a,b) => a - b); 
     for (let i = 0; i < 4; i++) {
