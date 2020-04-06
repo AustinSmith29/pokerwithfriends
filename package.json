@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "An online peer to peer poker web application for private game hosting.",
   "main": "app.js",
-  "dependencies": {},
+  "dependencies": {
+    "phaser": "^3.22.0"
+  },
   "devDependencies": {
     "mocha": "^7.1.1"
   },
