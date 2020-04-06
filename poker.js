@@ -21,9 +21,9 @@ const Ranks = Object.freeze({
 });
 
 const getHighCard = (hand) => Math.max(...hand.map(card => card.rank));
-const getNextHighestCards = (hand, n) => {
+const getCards = (hand, n) => {
     hand.sort((a,b) => b.rank - a.rank);
-    return hand.splice(1, n+1);
+    return hand.splice(0, n+1);
 };
 
 const count = (elem, arry) => {
@@ -119,7 +119,7 @@ const handStrength = (hand) => {
         return { type: HandRankings.STRAIGHT, strength: getHighCard(hand) };
     }
     else if (isThreeOfKind(hand)) {
-        return { type: HandRankings.THREE_OF_KIND, strength: occurs(3, handRanks(hand)), tiebreak: getNextHighestCards(occurs(3, handRanks(hand)), 2) };
+        return { type: HandRankings.THREE_OF_KIND, strength: occurs(3, handRanks(hand)), tiebreak: getCards(remove(occurs(3, handRanks(hand)), handRanks(hand)), 2) };
     }
     else if (isTwoPair(hand)) {
         const pair1 = occurs(2, handRanks(hand));
@@ -131,52 +131,54 @@ const handStrength = (hand) => {
             strength: [bigPair, smallPair], 
             tiebreak: occurs(1, handRanks(hand)) 
         };
-
     }
     else if (isPair(hand)) {
-        return { type: HandRankings.PAIR, strength: occurs(2, handRanks(hand)), tiebreak: getNextHighestCards(remove(occurs(2, handRanks(hand)), handRanks(hand)), 3) };
+        return { type: HandRankings.PAIR, strength: occurs(2, handRanks(hand)), tiebreak: getCards(remove(occurs(2, handRanks(hand)), handRanks(hand)), 3) };
     }
     else {
-        return { type: HandRankings.HIGH, strength: getHighCard(hand), tiebreak: getNextHighestCards(remove(getHighCard(hand), handRanks(hand)), 4) };
+        return { type: HandRankings.HIGH, strength: getHighCard(hand), tiebreak: getCards(remove(getHighCard(hand), handRanks(hand)), 4) };
+    }
+};
+
+const comparator = (a, b) => {
+    if (Array.isArray(a) && Array.isArray(b)) {
+        a.sort((a,b) => b - a);
+        b.sort((a,b) => b - a);
+        for (let i = 0; i < b.length; i++) {
+            if (a[i] > b[i]) {
+                return 1;
+            }
+            else if (a[i] < b[i]) {
+                return -1;
+            }
+        }
+        return 0;
+    }
+    if (a > b) {
+        return 1;
+    }
+    else if (a < b) {
+        return -1;
+    }
+    else {
+        return 0;
     }
 };
 
 exports.doesHandWin = (a, b) => {
-    const A_WINS = 1;
-    const B_WINS = 2;
-    const SPLIT = 0;
-    const aStrength = handStrength(a);
-    const bStrength = handStrength(b);
-    if (aStrength.type > bStrength.type) {
-        return A_WINS;
-    }
-    else if (aStrength.type === bStrength.type) {
-        if (aStrength.strength > bStrength.strength) {
-            return A_WINS;
+    const aHandStrength = handStrength(a);
+    const bHandStrength = handStrength(b);
+    const type = comparator(aHandStrength.type, bHandStrength.type);
+    const strength = comparator(aHandStrength.strength, bHandStrength.strength);
+    const tiebreaker = comparator(aHandStrength.tiebreak, bHandStrength.tiebreak);
+
+    if (type === 0) {
+        if (strength === 0) {
+            return tiebreaker;
         }
-        else if (aStrength.strength === bStrength.strength) {
-            if (aStrength.tiebreak && bStrength.tiebreak) {
-                if (aStrength.tiebreak > bStrength.tiebreak) {
-                    return A_WINS;
-                }
-                else if (aStrength.tiebreak === bStrength.tiebreak) {
-                    return SPLIT;
-                }
-                else {
-                    return B_WINS;
-                }
-            }
-            else {
-                return SPLIT;
-            }
-        }
-        else {
-            return B_WINS;
-        }
+        return strength;
     }
-    else {
-        return B_WINS;
-    }
+    return type;
 };
 
 const createDeck = () => {
