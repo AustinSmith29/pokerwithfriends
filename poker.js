@@ -71,20 +71,21 @@ const isPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRa
 const isTwoPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
 const isThreeOfKind = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 3;
 const isStraight = (hand) => {
-    const handRanks = hand.map(card => card.rank);
-    if (handRanks.find(rank => rank === Ranks.ACE)) {
+    const ranks = handRanks(hand);
+    if (ranks.find(rank => rank === Ranks.ACE)) {
         // We need to determine if the ace is low or high.
         // If a king is in the hand then it has to be treated as a 13 to make a straight.
-        const isKingInHand = handRanks.includes(Ranks.KING);
+        const isKingInHand = ranks.includes(Ranks.KING);
         let aceValue = (isKingInHand) ? Ranks.ACE : 0;
-        handRanks[handRanks.indexOf(Ranks.ACE)] = aceValue;
+        ranks[ranks.indexOf(Ranks.ACE)] = aceValue;
     }
-    handRanks.sort((a,b) => a - b); 
+    ranks.sort((a,b) => a - b); 
     for (let i = 0; i < 4; i++) {
-        if (handRanks[i] !== handRanks[i+1] - 1) {
+        if (ranks[i] !== ranks[i+1] - 1) {
             return false;
         }
     }
+    hand.sort((a, b) => a.rank - b.rank);
     return true;
 };
 const isFlush = (hand) => count(hand[0].suit, handSuits(hand)) === 5;
@@ -116,7 +117,14 @@ const handStrength = (hand) => {
         return { type: HandRankings.FLUSH, strength: getHighCard(hand) };
     }
     else if (isStraight(hand)) { 
-        return { type: HandRankings.STRAIGHT, strength: getHighCard(hand) };
+        const isKingInHand = handRanks(hand).includes(Ranks.KING);
+        const isAceInHand = handRanks(hand).includes(Ranks.ACE);
+        const aceValue = (isKingInHand) ? Ranks.ACE : 0;
+        const highCard = (getHighCard(hand) === Ranks.ACE) ? aceValue : getHighCard(hand);
+        return { 
+            type: HandRankings.STRAIGHT, 
+            strength: highCard 
+        };
     }
     else if (isThreeOfKind(hand)) {
         return { type: HandRankings.THREE_OF_KIND, strength: occurs(3, handRanks(hand)), tiebreak: getCards(remove(occurs(3, handRanks(hand)), handRanks(hand)), 2) };
