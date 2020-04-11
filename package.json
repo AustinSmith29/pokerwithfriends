@@ -4,6 +4,7 @@
   "description": "An online peer to peer poker web application for private game hosting.",
   "main": "app.js",
   "dependencies": {
+    "express": "^4.17.1",
     "phaser": "^3.22.0"
   },
   "devDependencies": {
