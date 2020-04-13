@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Poker With Friends | Create</title>
+    </head>
+    <body>
+        <h1>Poker With Friends Alpha</h1>
+        <form>
+            <input type="text" placeholder="Room Name"><br>
+            <input type="radio" id="cash" name="gameType" value="cash" onclick="showCashGameOptions()">
+            <label for="cash">Cash</label>
+            <input type="radio" id="tournament" name="gameType" value="tournament" onclick="showTournamentGameOptions()">
+            <label for="tournament">Tournament</label><br>
+            <div id="gameOptions">
+            </div>
+            <input type="submit" value="Create Game">
+        </form>
+        <script>
+            const makeNumberInput = (name, min, max=undefined) => {
+                const elem = document.createElement("input");
+                elem.setAttribute("type", "number");
+                elem.setAttribute("id", name);
+                elem.setAttribute("min", min);
+                if (max) {
+                    elem.setAttribute("max", max);
+                }
+                return elem;
+            };
+
+            function showCashGameOptions() {
+                clearGameOptions();
+                const smallBlind = makeNumberInput('smallBlind', 2);
+                const bigBlind = makeNumberInput('bigBlind', 3);
+                const startingStack = makeNumberInput('stack', 0);
+                populateGameOptions([smallBlind, bigBlind, startingStack]);
+            }
+
+            function showTournamentGameOptions() {
+                clearGameOptions();
+                const maxPlayers = makeNumberInput('maxPlayers', 2);
+                const tourneyTime = document.createElement("select");
+                tourneyTime.setAttribute("id", "time");
+                const durations = ["0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "5.5", "6.0"].map(duration => {
+                    const option = document.createElement('option');
+                    option.setAttribute("value", duration);
+                    const text = document.createTextNode(duration + ' hrs');
+                    option.appendChild(text);
+                    return option;
+                });
+                durations.map(elem => tourneyTime.appendChild(elem));
+                populateGameOptions([maxPlayers, tourneyTime]);
+            }
+
+            function populateGameOptions(elems) {
+                const options = document.getElementById("gameOptions");
+                elems.map(elem => options.appendChild(elem));
+            }
+
+            function clearGameOptions() {
+                const gameOptions = document.getElementById("gameOptions");
+                while (gameOptions.firstChild) {
+                    gameOptions.removeChild(gameOptions.lastChild);
+                }
+            }
+
+            showCashGameOptions();
+        </script>
+    </body>
+</html>
