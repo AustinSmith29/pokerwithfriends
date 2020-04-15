@@ -5,15 +5,24 @@
     </head>
     <body>
         <h1>Poker With Friends Alpha</h1>
-        <form>
-            <input type="text" placeholder="Room Name"><br>
-            <input type="radio" id="cash" name="gameType" value="cash" onclick="showCashGameOptions()">
+        <h2>Create Private Game</h2>
+        <form method="post">
+            <input type="text" id="roomName" name="roomName" placeholder="Room Name"><br>
+            <input type="text" id="hostName" name="hostName" placeholder="Your Name"><br>
+            <input type="radio" id="cash" name="gameType" value="cash" onclick="showCashGameOptions()" checked>
             <label for="cash">Cash</label>
             <input type="radio" id="tournament" name="gameType" value="tournament" onclick="showTournamentGameOptions()">
             <label for="tournament">Tournament</label><br>
             <div id="gameOptions">
             </div>
+            <input type="hidden" id="action" name="action" value="create">
             <input type="submit" value="Create Game">
+        </form>
+        <h2>Join a Game</h2>
+        <form method="post">
+            <input type="text" id="roomName" name="roomName" placholder="Room Name">
+            <input type="hidden" id="action" name="action" value="join">
+            <input type="submit" value="Join Game">
         </form>
         <script>
             const makeNumberInput = (name, min, max=undefined) => {
