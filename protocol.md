@@ -1,5 +1,55 @@
 # Poker with Friends Networking Protocol
----
+
+## Server Message Types
+
+### COMMUNITYCARDS
+> Server deals community cards.
+
+**Data Constraint**
+```
+{
+    "cards": {[string, string, ...]}
+}
+```
+
+***
+
+### HOLECARDS
+> Server sends hole cards to specific player.
+
+**Data Constraint**
+```
+{
+    "cards": [string, string]
+}
+
+```
+
+***
+
+### NEWHAND
+> Server starts new hand and moves the blinds.
+
+**Data Constraint**
+```
+{
+    "smallBlind": { position: number, amount: number },
+    "bigBlind": { position: number, amount: number }
+}
+```
+
+***
+
+### WINNER
+> Returns the winner of the hand.
+
+```
+{
+    winners: [{playerNameString: amount}, {winnerTwoNameString: amount2}],
+}
+```
+
+***
 
 ## Client Message Types
 
