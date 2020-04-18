@@ -112,6 +112,30 @@ none
 
 ***
 
+### SIT_ACCEPT
+> Accepts a seat request from a player joining.
+***Message is only sent by the host player.***
+
+**Data Constraints**
+```
+{
+}
+```
+
+***
+
+### SIT_REJECT
+> Rejects a seat request from a player joining.
+***Message is only sent by the host player.***
+
+**Data Constraints**
+```
+{
+}
+```
+
+***
+
 ### STAND
 > A player that stands will have his seat reserved but will not be dealt a hand.
 
@@ -121,6 +145,12 @@ none
     "player": string,
 }
 ```
+
+***
+
+### START_GAME
+> Tells the server to start the game.
+***Message is only sent by the host player.***
 
 ***
 
