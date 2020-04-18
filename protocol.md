@@ -38,6 +38,16 @@
 }
 ```
 
+### TABLESYNC
+> Server sends client information about the states of other players at the table.
+
+**Data Constraint**
+```
+{
+    "players": [{position: number, name: string, stack: number, status: string}]
+}
+```
+
 ***
 
 ### WINNER
