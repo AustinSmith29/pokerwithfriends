@@ -9,21 +9,26 @@ const port = 3000;
 
 app.use('/scripts/socket.io', express.static(__dirname + '/node_modules/socket.io-client/dist/'));
 app.use('/scripts/phaser', express.static(__dirname + '/node_modules/phaser/dist/'));
+app.use('/scripts', express.static(__dirname + '/scripts/'));
+app.use('/assets', express.static(__dirname + '/assets/'));
 app.use(express.urlencoded({extended: true}));
 
-const Player = (name, stack, seat) => {
+// Maps string to a running game.
+const gameTable = new Map();
+
+const Player = (name, stack, seat, host=false, status='LOBBY') => {
     return {
         name: name,
         stack: stack,
         seat: seat,
         hand: [],
-        status: 'playing'
+        status: status,
+        host: host
     };
 };
 
 class GameHeader {
     constructor(game) {
-        this.id = null;
         this.password = '';
         this.aliveFlag = true;
         this.game = game;
@@ -45,8 +50,14 @@ class CashGame {
     constructor({smallBlind, bigBlind, startingStack, hostName}) {
         this.smallBlind = smallBlind;
         this.bigBlind = bigBlind;
-        this.players = [Player(hostName, startingStack)];
-        this.state = State.NEWHAND
+        this.state = {
+            players: [Player(hostName, startingStack, 0, true, 'SEATED')],
+            cards: [],
+            board: [],
+            blinds: [],
+            status: State.WAITING
+        };
+        this.host = null;
     }
 }
 
@@ -73,9 +84,12 @@ app.get('/', function(req, res) {
 });
 
 app.post('/', function(req, res) {
-    const {gameType, roomName, rest} = req.body;
-    // const gameInfo = createGame(gameType, rest);
-    // const entry = new GameHeader(gameInfo);
+    const {gameType, roomName, action, ...rest} = req.body;
+    if (action === 'create') {
+        const gameInfo = createGame(gameType, rest);
+        const entry = new GameHeader(gameInfo);
+        gameTable.set(roomName, entry);
+    }
     res.redirect(url.format({
         pathname: '/game',
         query: {
@@ -91,14 +105,37 @@ app.get('/game', function(req, res) {
     res.sendFile(__dirname + '/game.html');
 });
 
-io.on('connection', function(socket) {
-    socket.on('join', function(msg) {
-        console.log(`Player joined ${msg} room.`);
-        socket.emit('pong', '');
+const nsp = io.of('/game');
+nsp.on('connection', function(socket) {
+    socket.on('JOIN', function(msg) {
+        console.log('A user has connected.');
+        socket.join(msg.roomName);
+        if (!gameTable.get(msg.roomName).game.host) {
+            gameTable.get(msg.roomName).game.host = {socket: socket};
+        }
     });
-    console.log('A user has connected.');
+
+    socket.on('SIT', function(request) {
+        console.log('Sit request!');
+        const game = gameTable.get(request.roomName).game;
+        socket.to(game.host.socket.id).emit('SIT_REQUEST', request);
+    });
+
+    socket.on('SIT_ACCEPT', function(request) {
+        const game = gameTable.get(request.roomName).game;
+        game.state.players.push(Player(request.player, request.stack, request.seat));
+        socket.to(request.roomName).emit('TABLESYNC', game.state);
+    });
 });
 
+nsp.on('SIT', function(request) { 
+});
+
+nsp.on('SIT_ACCEPT', function(msg) {
+});
+
+nsp.on('SIT_REJECT', function(msg) {
+});
 
 http.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
