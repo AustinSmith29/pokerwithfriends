@@ -6,34 +6,6 @@
         <script src="scripts/game.js"></script>
     </head>
     <body>
-        <button type="button" onclick="sit(0)">Sit Down</button>
         <div id="game"></div>
-        <script>
-            /*
-            var socket = io('/game');
-            let params = new URLSearchParams(location.search);
-            const roomName = params.get('roomName');
-            const state = {};
-            socket.emit('JOIN', {roomName: roomName});
-
-            socket.on('TABLESYNC', function(gameState) {
-                state = {...gameState};
-            });
-
-            socket.on('SIT_REQUEST', function(request) {
-                document.write(`Received sit request with data ${request}`);
-                console.log(game);
-            });
-
-            socket.on('SIT_ACCEPT', function() {
-                console.log('You are seated!');
-            });
-
-            function sit(seat) {
-                console.log('Sending message');
-                socket.emit('SIT', {roomName: roomName, seat: seat});
-            }
-            */
-            </script>
     </body>
 </html>
