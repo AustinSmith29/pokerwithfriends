@@ -3,6 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const url = require('url');
+const poker = require('./server.js');
 
 const hostname = '0.0.0.0';
 const port = 3000;
@@ -13,71 +14,7 @@ app.use('/scripts', express.static(__dirname + '/scripts/'));
 app.use('/assets', express.static(__dirname + '/assets/'));
 app.use(express.urlencoded({extended: true}));
 
-// Maps string to a running game.
-const gameTable = new Map();
-
-const Player = (name, stack, seat, host=false, status='LOBBY') => {
-    return {
-        name: name,
-        stack: stack,
-        seat: seat,
-        hand: [],
-        status: status,
-        host: host
-    };
-};
-
-class GameHeader {
-    constructor(game) {
-        this.password = '';
-        this.aliveFlag = true;
-        this.game = game;
-    }
-}
-
-const State = Object.freeze({
-    WAITING: 0,
-    NEWHAND: 1,
-    DEAL: 2,
-    PREFLOP: 3,
-    FLOP: 4,
-    TURN: 5,
-    RIVER: 6,
-    SHOWDOWN: 7
-});
-
-class CashGame {
-    constructor({smallBlind, bigBlind, startingStack, hostName}) {
-        this.smallBlind = smallBlind;
-        this.bigBlind = bigBlind;
-        this.state = {
-            players: [Player(hostName, startingStack, 0, true, 'SEATED')],
-            cards: [],
-            board: [],
-            blinds: [],
-            status: State.WAITING
-        };
-        this.host = null;
-    }
-}
-
-class TournamentGame {
-    constructor({numPlayers, duration}) {
-        this.numPlayers = numPlayers;
-        this.duration = duration;
-    }
-}
-
-function createGame(gameType, params) {
-    switch(gameType) {
-        case 'cash':
-            return new CashGame(params);
-        case 'tournament':
-            return new TournamentGame(params);
-        default:
-            error('Unknown Game!');
-    }
-}
+const gameTable = new poker.GameTable();
 
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
@@ -86,14 +23,17 @@ app.get('/', function(req, res) {
 app.post('/', function(req, res) {
     const {gameType, roomName, action, ...rest} = req.body;
     if (action === 'create') {
-        const gameInfo = createGame(gameType, rest);
-        const entry = new GameHeader(gameInfo);
-        gameTable.set(roomName, entry);
+        const game = poker.createGame(gameType, rest);
+        gameTable.addGameSession(roomName, game);
+        const {hostName, stack} = rest;
+        const player = poker.Player(hostName, stack, 0, undefined, 'SEATED');
+        game.setHost(player);
+        console.log(rest);
     }
     res.redirect(url.format({
         pathname: '/game',
         query: {
-            roomName: roomName
+            roomName: roomName,
         }
     }));
 });
@@ -109,16 +49,29 @@ const nsp = io.of('/game');
 nsp.on('connection', function(socket) {
     socket.on('JOIN', function(msg) {
         console.log('A user has connected.');
+        const game = gameTable.getGame(msg.roomName);
         socket.join(msg.roomName);
-        if (!gameTable.get(msg.roomName).game.host) {
-            gameTable.get(msg.roomName).game.host = {socket: socket};
+        if (game.host.socketId) {
+            game.addWatcher(socket.id);
+        } else {
+            game.bindHost(socket.id);
+            console.log('Host bound.');
         }
+        console.log(game.state);
     });
 
     socket.on('SIT', function(request) {
         console.log('Sit request!');
+        const game = gameTable.getGame(request.roomName);
+        socket.to(game.host.socketId).emit('SIT_REQUEST', request);
+    });
+
+    socket.on('SIT_REQUEST', function(request) {
         const game = gameTable.get(request.roomName).game;
-        socket.to(game.host.socket.id).emit('SIT_REQUEST', request);
+        if (socket.id === game.host) {
+            console.log(`Received sit request with data ${request}`);
+            socket.to(request.socketId).emit('SIT_ACCEPT');
+        }
     });
 
     socket.on('SIT_ACCEPT', function(request) {
@@ -126,15 +79,6 @@ nsp.on('connection', function(socket) {
         game.state.players.push(Player(request.player, request.stack, request.seat));
         socket.to(request.roomName).emit('TABLESYNC', game.state);
     });
-});
-
-nsp.on('SIT', function(request) { 
-});
-
-nsp.on('SIT_ACCEPT', function(msg) {
-});
-
-nsp.on('SIT_REJECT', function(msg) {
 });
 
 http.listen(port, hostname, () => {
