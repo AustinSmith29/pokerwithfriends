@@ -30,6 +30,7 @@ class PokerGame {
         var graphics = this.add.graphics();
         graphics.fillStyle(0xffff00, 1);
 
+        this.localState = {};
         this.seats = [];
         for (let i = 0; i < 10; i++) {
             const seatCoord = this.coordinateBase.seatCoordinates(i);
@@ -40,6 +41,8 @@ class PokerGame {
         }
 
         this.pendingSeatRequests = [];
+        this.lobbyButton = new LobbyButton(100, 100);
+        this.lobbyButton.draw(graphics);
     }
 
     preload() {
@@ -51,14 +54,16 @@ class PokerGame {
         this.socket = io('/game');
         let params = new URLSearchParams(location.search);
         const roomName = params.get('roomName');
-        const state = {};
+        this.localState = {};
+        this.lobby = [];
         this.socket.emit('JOIN', {roomName: roomName});
 
         this.socket.on('TABLESYNC', function(gameState) {
-            state = {...gameState};
+            this.localState = {...gameState};
         });
 
         this.socket.on('SIT_REQUEST', function(request) {
+            this.lobby.push(request);
         });
 
         this.socket.on('SIT_ACCEPT', function() {
@@ -73,30 +78,8 @@ class PokerGame {
     }
 
     update() {
-        for (const button of this.seats) {
-            button.draw(graphics);
-        }
     }
 }
-
-const width = window.innerWidth * window.devicePixelRatio;
-const height = window.innerHeight * window.devicePixelRatio;
-this.origin = [width/2, height/2];
-this.scaleRatio = window.devicePixelRadio / 3;
-const config = {
-    type: Phaser.AUTO,
-    scale: {
-        parent: 'game',
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: width, 
-        height: height
-    }, 
-    scene: {
-        preload: this.preload,
-        create: this.create,
-        update: this.update
-    }
-};
 
 class SitHereButton {
 
@@ -108,6 +91,22 @@ class SitHereButton {
 
     draw(graphics) {
         graphics.fillRoundedRect(this.x, this.y, 200, 100, 32);
+    }
+}
+
+class LobbyButton {
+
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    draw(graphics) {
+        graphics.fillRoundedRect(this.x, this.y, 100, 50, 8);
+    }
+
+    onClick() {
+        console.log('Button Clicked!');
     }
 }
 

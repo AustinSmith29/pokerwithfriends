@@ -28,7 +28,6 @@ app.post('/', function(req, res) {
         const {hostName, stack} = rest;
         const player = poker.Player(hostName, stack, 0, undefined, 'SEATED');
         game.setHost(player);
-        console.log(rest);
     }
     res.redirect(url.format({
         pathname: '/game',
@@ -48,16 +47,19 @@ app.get('/game', function(req, res) {
 const nsp = io.of('/game');
 nsp.on('connection', function(socket) {
     socket.on('JOIN', function(msg) {
-        console.log('A user has connected.');
         const game = gameTable.getGame(msg.roomName);
         socket.join(msg.roomName);
         if (game.host.socketId) {
+            console.log('Player has joined lobby.');
             game.addWatcher(socket.id);
         } else {
+            console.log('Host has joined');
             game.bindHost(socket.id);
-            console.log('Host bound.');
         }
-        console.log(game.state);
+
+        socket.emit('TABLESYNC', game.state);
+        io.of('/game').emit('TABLESYNC', game.state);
+        console.log('Broacast state');
     });
 
     socket.on('SIT', function(request) {
