@@ -1,4 +1,11 @@
-var seats = [];
+import {Client} from './client.js';
+
+function updateState(gameObj) {
+    return function() {
+        console.log('In new updateState()');
+    }
+}
+
 class PokerGame {
     constructor() {
         const width = window.innerWidth * window.devicePixelRatio;
@@ -30,7 +37,6 @@ class PokerGame {
         var graphics = this.add.graphics();
         graphics.fillStyle(0xffff00, 1);
 
-        this.localState = {};
         this.seats = [];
         for (let i = 0; i < 10; i++) {
             const seatCoord = this.coordinateBase.seatCoordinates(i);
@@ -43,6 +49,7 @@ class PokerGame {
         this.pendingSeatRequests = [];
         this.lobbyButton = new LobbyButton(100, 100);
         this.lobbyButton.draw(graphics);
+        this.onStateUpdate = updateState(this);
     }
 
     preload() {
@@ -51,24 +58,8 @@ class PokerGame {
     }
 
     create() {
-        this.socket = io('/game');
-        let params = new URLSearchParams(location.search);
-        const roomName = params.get('roomName');
-        this.localState = {};
-        this.lobby = [];
-        this.socket.emit('JOIN', {roomName: roomName});
-
-        this.socket.on('TABLESYNC', function(gameState) {
-            this.localState = {...gameState};
-        });
-
-        this.socket.on('SIT_REQUEST', function(request) {
-            this.lobby.push(request);
-        });
-
-        this.socket.on('SIT_ACCEPT', function() {
-            console.log('You are seated!');
-        });
+        const roomName = new URLSearchParams(location.search).get('roomName');
+        this.client = new Client(roomName, this.onUpdateState);
 
         var graphics = this.add.graphics();
         graphics.fillStyle(0xffff00, 1);

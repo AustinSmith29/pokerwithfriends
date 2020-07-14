@@ -1,26 +1,27 @@
 export class Client {
-    constructor(socket, roomName) {
-        this.socket = socket;
+    constructor(roomName, onStateUpdateFunc) {
         this.roomName = roomName;
-        this.status = 'LOBBY';
-        this.gameState = this.getState();
+        this.localState = {};
+        this.onStateUpdateFunc = onStateUpdateFunc; // mechanism for updating rendering state based on logical state
+        this.socket = io('/game');
+        this.socket.emit('JOIN', {roomName: roomName});
+        this._bindClientEvents();
     }
 
-    getState() {
+    _bindClientEvents() {
         const socket = this.socket;
-        socket.on('TABLESYNC', function(gameState) {
-            this.gameState = {...gameState};
+        socket.on('TABLESYNC', (serverState) => {
+            this.localState = {...serverState};
+            this.onStateUpdateFunc(serverState);
         });
 
-        socket.on('SIT_REQUEST', function(request) {
+        socket.on('SIT_REQUEST', (request) => {
             console.log('Recieved sit request.');
         });
 
-        socket.on('SIT_ACCEPT', function() {
-            this.status = 'SEATED'
+        socket.on('SIT_ACCEPT', () => {
+            console.log('You have been seated!');
         });
-
-        return this.gameState;
     }
 
     sit(seat) {
