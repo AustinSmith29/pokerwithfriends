@@ -1,8 +1,8 @@
 import {Client} from './client.js';
 
-function updateState(gameObj) {
+function onTableSync(gameObj) {
     return function() {
-        console.log('In new updateState()');
+        console.log(gameObj);
     }
 }
 
@@ -34,22 +34,7 @@ class PokerGame {
         //const scaleRatio = window.devicePixelRadio / 3;
         //this.coordinateBase = new Coordinates(origin, scaleRatio);
         this.coordinateBase = new Coordinates(origin, 3);
-        var graphics = this.add.graphics();
-        graphics.fillStyle(0xffff00, 1);
-
-        this.seats = [];
-        for (let i = 0; i < 10; i++) {
-            const seatCoord = this.coordinateBase.seatCoordinates(i);
-            this.seats.push(new SitHereButton(seatCoord[0], seatCoord[1]));
-        }
-        for (let i = 0; i < 10; i++) {
-            this.seats[i].draw(graphics);
-        }
-
-        this.pendingSeatRequests = [];
-        this.lobbyButton = new LobbyButton(100, 100);
-        this.lobbyButton.draw(graphics);
-        this.onStateUpdate = updateState(this);
+        this.onTableSync = onTableSync(this);
     }
 
     preload() {
@@ -59,7 +44,7 @@ class PokerGame {
 
     create() {
         const roomName = new URLSearchParams(location.search).get('roomName');
-        this.client = new Client(roomName, this.onUpdateState);
+        this.client = new Client(roomName, this.onStateUpdate);
 
         var graphics = this.add.graphics();
         graphics.fillStyle(0xffff00, 1);
@@ -69,35 +54,6 @@ class PokerGame {
     }
 
     update() {
-    }
-}
-
-class SitHereButton {
-
-    constructor(x, y) {
-        this.open = true;
-        this.x = x;
-        this.y = y;
-    }
-
-    draw(graphics) {
-        graphics.fillRoundedRect(this.x, this.y, 200, 100, 32);
-    }
-}
-
-class LobbyButton {
-
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    draw(graphics) {
-        graphics.fillRoundedRect(this.x, this.y, 100, 50, 8);
-    }
-
-    onClick() {
-        console.log('Button Clicked!');
     }
 }
 
@@ -143,16 +99,6 @@ class Coordinates {
     }
 
 }
-
-function drawPlayerCard(graphics, name, chip, seat) {
-    //const [x, y] = seatCoordinates(seat);
-    console.log(this);
-    const [x, y] = [300, 200];
-    graphics.fillRoundedRect(x, y, 100, 100, 32);
-};
-
-const drawCommunityCards = (cards) => {
-};
 
 window.onload = () => {
     var game = new PokerGame();
