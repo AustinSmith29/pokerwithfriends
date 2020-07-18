@@ -1,8 +1,8 @@
 export class Client {
-    constructor(roomName, onStateUpdateFunc) {
+    constructor(roomName, onTableSync) {
         this.roomName = roomName;
         this.localState = {};
-        this.onStateUpdateFunc = onStateUpdateFunc; // mechanism for updating rendering state based on logical state
+        this.onTableSync = onTableSync; // mechanism for updating rendering state based on logical state
         this.socket = io('/game');
         this.socket.emit('JOIN', {roomName: roomName});
         this._bindClientEvents();
@@ -12,7 +12,7 @@ export class Client {
         const socket = this.socket;
         socket.on('TABLESYNC', (serverState) => {
             this.localState = {...serverState};
-            this.onStateUpdateFunc(serverState);
+            this.onTableSync(serverState);
         });
 
         socket.on('SIT_REQUEST', (request) => {

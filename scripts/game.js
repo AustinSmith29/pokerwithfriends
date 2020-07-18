@@ -1,4 +1,5 @@
 import {Client} from './client.js';
+import {Button} from './ui/button.js';
 
 function onTableSync(gameObj) {
     return function() {
@@ -38,19 +39,26 @@ class PokerGame {
     }
 
     preload() {
-        this.background = this.load.image('background', 'assets/pokerBackground.png');
-        this.table = this.load.image('table', 'assets/pokertable.png');
+        //this.background = this.load.image('background', 'assets/pokerBackground.png');
+        //this.table = this.load.image('table', 'assets/pokertable.png');
+        this.load.image('testButton', 'assets/testButton.png');
+        this.load.image('testButtonHover', 'assets/testButtonHover.png');
+        this.load.image('testButtonClick', 'assets/testButtonClick.png');
     }
 
     create() {
         const roomName = new URLSearchParams(location.search).get('roomName');
         this.client = new Client(roomName, this.onStateUpdate);
 
+        this.testButton = new Button(this.scene, 100, 100, 'testButton', 'testButtonHover', 'testButtonClick', () => {});
+       /* 
         var graphics = this.add.graphics();
         graphics.fillStyle(0xffff00, 1);
         const [centerX, centerY] = [this.game.config.width / 2, this.game.config.height / 2];
         this.add.image(centerX, centerY, 'table');
         this.table.scale.setTo(this.scaleRatio, this.scaleRatio);
+        */
+        
     }
 
     update() {
