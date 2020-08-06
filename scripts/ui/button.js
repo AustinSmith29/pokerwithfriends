@@ -1,11 +1,13 @@
 export class Button extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, idleImg, hoverImg, clickImg, onClick) {
-        if([idleImg, hoverImg, clickImg].filter(img => !scene.scene.textures.exists(img)).length > 0) {
+        /*
+        if([idleImg, hoverImg, clickImg].filter(img => !scene.textures.exists(img)).length > 0) {
             console.error('Images not loaded!');
         }
-        super(scene.scene, x, y, idleImg);
+        */
+        super(scene, x, y, idleImg);
 
-        scene.scene.add.existing(this);
+        scene.add.existing(this);
 
         this.idleImg = idleImg;
         this.hoverImg = hoverImg;
@@ -13,7 +15,7 @@ export class Button extends Phaser.GameObjects.Sprite {
         this.onClick = onClick;
         
         this.setInteractive({useHandCursor: true});
-        scene.scene.input.enableDebug(this);
+        scene.input.enableDebug(this);
         this.on('pointerover', this.onHover);
         this.on('pointerout', this.reset);
         this.on('pointerdown', this.doClick);

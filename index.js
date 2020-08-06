@@ -65,6 +65,7 @@ nsp.on('connection', function(socket) {
     socket.on('SIT', function(request) {
         console.log('Sit request!');
         const game = gameTable.getGame(request.roomName);
+        console.log(`Sending request to host ${game.host.name} with socketId ${game.host.socketId}`);
         socket.to(game.host.socketId).emit('SIT_REQUEST', request);
     });
 

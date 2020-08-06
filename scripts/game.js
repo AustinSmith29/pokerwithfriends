@@ -1,9 +1,13 @@
 import {Client} from './client.js';
-import {Button} from './ui/button.js';
+// import {Button} from './ui/button.js';
+import {Seat, SeatStatus} from './ui/seat.js';
 
-function onTableSync(gameObj) {
+function onTableSync(game) {
     return function() {
-        console.log(gameObj);
+        const takenSeats = game.client.localState.players.map(player => player.seat);
+        for (const seat of takenSeats) {
+            game.seats[seat].setStatus(SeatStatus.PLAYING);
+        }
     }
 }
 
@@ -31,16 +35,17 @@ class PokerGame {
     }
 
     init() {
-        const origin = [this.game.config.width/2, this.game.config.height/2];
+        this.origin = [this.game.config.width/2, this.game.config.height/2];
         //const scaleRatio = window.devicePixelRadio / 3;
         //this.coordinateBase = new Coordinates(origin, scaleRatio);
-        this.coordinateBase = new Coordinates(origin, 3);
+        this.coordinateBase = new Coordinates(this.origin, 3);
         this.onTableSync = onTableSync(this);
+        this.seats = [];
     }
 
     preload() {
         //this.background = this.load.image('background', 'assets/pokerBackground.png');
-        //this.table = this.load.image('table', 'assets/pokertable.png');
+        this.load.image('table', 'assets/pokertable.png');
         this.load.image('testButton', 'assets/testButton.png');
         this.load.image('testButtonHover', 'assets/testButtonHover.png');
         this.load.image('testButtonClick', 'assets/testButtonClick.png');
@@ -48,17 +53,14 @@ class PokerGame {
 
     create() {
         const roomName = new URLSearchParams(location.search).get('roomName');
-        this.client = new Client(roomName, this.onStateUpdate);
+        this.client = new Client(roomName, this.onTableSync);
 
-        this.testButton = new Button(this.scene, 100, 100, 'testButton', 'testButtonHover', 'testButtonClick', () => {});
-       /* 
-        var graphics = this.add.graphics();
-        graphics.fillStyle(0xffff00, 1);
-        const [centerX, centerY] = [this.game.config.width / 2, this.game.config.height / 2];
-        this.add.image(centerX, centerY, 'table');
-        this.table.scale.setTo(this.scaleRatio, this.scaleRatio);
-        */
-        
+        this.add.image(this.origin[0], this.origin[1], 'table');
+
+        for (let i = 0; i < 9; i++) {
+            const [x, y] = this.coordinateBase.seatCoordinates(i);
+            this.seats.push(new Seat(this.scene, x, y, SeatStatus.OPEN, () => this.client.sit(i)));
+        }
     }
 
     update() {
