@@ -12,13 +12,11 @@ export class TextButton extends Phaser.GameObjects.Text {
     }
 
     doClick() {
-        console.log('Click');
         this.setStyle({fill: '#0f0'});
         this.onClick();
     }
 
     onHover() {
-        console.log('Hover');
         this.setStyle({fill: '#ff0'});
     }
 
