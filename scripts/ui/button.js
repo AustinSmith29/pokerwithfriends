@@ -1,10 +1,8 @@
 export class Button extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, idleImg, hoverImg, clickImg, onClick) {
-        /*
         if([idleImg, hoverImg, clickImg].filter(img => !scene.textures.exists(img)).length > 0) {
             console.error('Images not loaded!');
         }
-        */
         super(scene, x, y, idleImg);
 
         scene.add.existing(this);

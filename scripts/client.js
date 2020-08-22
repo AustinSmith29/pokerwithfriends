@@ -25,7 +25,7 @@ export class Client {
     }
 
     sit(seat) {
-        this.socket.emit('SIT', {roomName: this.roomName, seat: seat});
+        this.socket.emit('SIT_REQUEST', {roomName: this.roomName, seat: seat});
         this.status = 'PENDING';
     }
 

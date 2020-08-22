@@ -1,8 +1,7 @@
-export class DialogWindow extends Phaser.GameObjects.GameObject {
-    constructor(scene, x, y, w, h, title, style=undefined) {
-        super(scene, "DialogWindow");
+export class Modal extends Phaser.GameObjects.GameObject {
+    constructor(scene, x, y, w, h, style=undefined) {
+        super(scene, "Modal");
         this.scene = scene;
-        this.title = title;
         this.x = x;
         this.y = y;
         this.w = w;
@@ -35,5 +34,10 @@ export class DialogWindow extends Phaser.GameObjects.GameObject {
         // inner window
         this.graphics.fillStyle(this.style.windowColor, this.style.windowAlpha);
         this.graphics.fillRect(x + this.style.borderThickness, y + this.style.borderThickness, w - this.style.borderThickness, h - this.style.borderThickness);
+    }
+
+    destroy() {
+        this.graphics.destroy();
+        super.destroy();
     }
 }

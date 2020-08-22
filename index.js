@@ -70,11 +70,10 @@ nsp.on('connection', function(socket) {
     });
 
     socket.on('SIT_REQUEST', function(request) {
-        const game = gameTable.get(request.roomName).game;
-        if (socket.id === game.host) {
-            console.log(`Received sit request with data ${request}`);
-            socket.to(request.socketId).emit('SIT_ACCEPT');
-        }
+        console.log(`Received sit request with data ${request}`);
+        const game = gameTable.getGame(request.roomName);
+        game.addSitRequest(socket.id, request);
+        io.of('/game').emit('TABLESYNC', game.state);
     });
 
     socket.on('SIT_ACCEPT', function(request) {

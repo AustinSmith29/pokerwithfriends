@@ -27,6 +27,7 @@ class CashGame {
         this.state = {
             players: [],
             lobby: [],
+            sitRequests: [],
             cards: [],
             board: [],
             blinds: [],
@@ -38,6 +39,10 @@ class CashGame {
 
     addWatcher(socketId) {
         this.state.lobby.push(socketId);
+    }
+
+    addSitRequest(socketId, sitRequest) {
+        this.state.sitRequests.push(sitRequest);
     }
 
     setHost(player) {
