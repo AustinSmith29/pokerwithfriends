@@ -25,7 +25,10 @@ export class Seat extends Phaser.GameObjects.GameObject {
         }
         switch(newStatus) {
             case SeatStatus.OPEN:
-                this.object = new Button(this.scene, this.x, this.y, 'testButton', 'testButtonHover', 'testButtonClick', () => {this.setStatus(SeatStatus.PLAYING); this.onSit();});
+                this.object = new Button(this.scene, this.x, this.y, 'testButton', 'testButtonHover', 'testButtonClick', () => {this.setStatus(SeatStatus.RESERVED); this.onSit();});
+                break;
+            case SeatStatus.RESERVED:
+                this.object = this.scene.add.text(this.x, this.y, 'Pending');
                 break;
             default:
                 this.object = this.scene.add.text(this.x, this.y, 'Playing');

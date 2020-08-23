@@ -42,7 +42,7 @@ class CashGame {
     }
 
     addSitRequest(socketId, sitRequest) {
-        this.state.sitRequests.push(sitRequest);
+        this.state.sitRequests.push({socketId, ...sitRequest});
     }
 
     setHost(player) {

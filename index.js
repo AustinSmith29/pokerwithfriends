@@ -77,9 +77,16 @@ nsp.on('connection', function(socket) {
     });
 
     socket.on('SIT_ACCEPT', function(request) {
-        const game = gameTable.get(request.roomName).game;
-        game.state.players.push(Player(request.player, request.stack, request.seat));
-        socket.to(request.roomName).emit('TABLESYNC', game.state);
+        const game = gameTable.getGame(request.roomName);
+        const sitRequest = game.state.sitRequests.find(req => req.socketId === request.socketId);
+        if (!sitRequest) {
+            console.log(`Error. Recieved request from ${request.socketId}`);
+            return;
+        }
+        game.seatPlayer(poker.Player(sitRequest.name, sitRequest.stack, sitRequest.seat, request.socketId, status='PLAYING'));
+        game.state.sitRequests = game.state.sitRequests.filter(req => req.socketId !== request.socketId);
+        console.log(game.state);
+        io.of('/game').emit('TABLESYNC', game.state);
     });
 });
 

@@ -25,8 +25,13 @@ export class Client {
     }
 
     sit(seat) {
-        this.socket.emit('SIT_REQUEST', {roomName: this.roomName, seat: seat});
+        this.socket.emit('SIT_REQUEST', {roomName: this.roomName, seat: seat, name: 'JoeTest', stack: 1000, socketId: this.socket.id});
         this.status = 'PENDING';
+    }
+
+    acceptSitRequest(fromSocketId) {
+        this.socket.emit('SIT_ACCEPT', {roomName: this.roomName, socketId: fromSocketId});
+        this.status = 'PLAYING';
     }
 
 }

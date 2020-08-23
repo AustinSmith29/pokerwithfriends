@@ -3,30 +3,7 @@ import {TextButton} from './ui/TextButton.js';
 import {Seat, SeatStatus} from './ui/seat.js';
 import {Modal} from './ui/Modal.js';
 import {Frame, Row, Column} from './ui/Container.js';
-
-class TestModal extends Modal {
-    constructor(scene) {
-        super(scene, 300, 400, 300, 400);
-        this.rootFrame = new Frame(scene, 300, 400, 300, 400, 'column');
-
-        const modal = this;
-        this.row1 = Row(this.rootFrame, 30);
-        this.row1.pack(new TextButton(scene, 0, 0, "Test 1", () => {}), 20);
-        this.row1.pack(new TextButton(scene, 0, 0, "Test 2", () => {}), 20);
-        this.row1.pack(new TextButton(scene, 0, 0, "Close Window", () => modal.destroy()), 20);
-        this.rootFrame.pack(this.row1);
-
-        this.row2 = Row(this.rootFrame, 30);
-        this.row2.pack(new TextButton(scene, 0, 0, "Test 3", () => {}), 20);
-        this.row2.pack(new TextButton(scene, 0, 0, "Test 4", () => {}), 20);
-        this.rootFrame.pack(this.row2);
-    }
-    
-    destroy() {
-        this.rootFrame.destroy();
-        super.destroy();
-    }
-}
+import {PlayerManagementModal} from './ui/PlayerManagementModal.js';
 
 function onTableSync(game) {
     return function() {
@@ -35,8 +12,15 @@ function onTableSync(game) {
             game.seats[seat].setStatus(SeatStatus.PLAYING);
         }
 
+        for (const sitRequest of game.client.localState.sitRequests) {
+            game.seats[sitRequest.seat].setStatus(SeatStatus.RESERVED);
+        }
+
         if (game.client.localState.sitRequests.length !== 0) {
-            game.playerManagementButton.setText(game.playerManagementButton.text + game.client.localState.sitRequests.length.toString());
+            game.playerManagementButton.setText(game.playerManagementButton.text + ` [${game.client.localState.sitRequests.length.toString()}]`);
+        }
+        else {
+            game.playerManagementButton.setText('Players');
         }
     }
 }
@@ -86,15 +70,13 @@ class PokerGame {
         this.client = new Client(roomName, this.onTableSync);
 
         this.add.image(this.origin[0], this.origin[1], 'table');
-        this.modal = new TestModal(this.scene.scene);
 
         for (let i = 0; i < 9; i++) {
             const [x, y] = this.coordinateBase.seatCoordinates(i);
             this.seats.push(new Seat(this.scene, x, y, SeatStatus.OPEN, () => this.client.sit(i)));
         }
 
-        this.openModalButton = new TextButton(this.scene.scene, 100, 20, 'Open Test Modal', () => {new TestModal(this.scene.scene)});
-        this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => {});
+        this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => {new PlayerManagementModal(this.scene.scene, this.client);});
     }
 
     update() {
