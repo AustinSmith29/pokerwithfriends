@@ -1,4 +1,30 @@
-var seats = [];
+import {Client} from './client.js';
+import {TextButton} from './ui/TextButton.js';
+import {Seat, SeatStatus} from './ui/seat.js';
+import {Modal} from './ui/Modal.js';
+import {Frame, Row, Column} from './ui/Container.js';
+import {PlayerManagementModal} from './ui/PlayerManagementModal.js';
+
+function onTableSync(game) {
+    return function() {
+        const takenSeats = game.client.localState.players.map(player => player.seat);
+        for (const seat of takenSeats) {
+            game.seats[seat].setStatus(SeatStatus.PLAYING);
+        }
+
+        for (const sitRequest of game.client.localState.sitRequests) {
+            game.seats[sitRequest.seat].setStatus(SeatStatus.RESERVED);
+        }
+
+        if (game.client.localState.sitRequests.length !== 0) {
+            game.playerManagementButton.setText(game.playerManagementButton.text + ` [${game.client.localState.sitRequests.length.toString()}]`);
+        }
+        else {
+            game.playerManagementButton.setText('Players');
+        }
+    }
+}
+
 class PokerGame {
     constructor() {
         const width = window.innerWidth * window.devicePixelRatio;
@@ -23,91 +49,37 @@ class PokerGame {
     }
 
     init() {
-        const origin = [this.game.config.width/2, this.game.config.height/2];
+        this.origin = [this.game.config.width/2, this.game.config.height/2];
         //const scaleRatio = window.devicePixelRadio / 3;
         //this.coordinateBase = new Coordinates(origin, scaleRatio);
-        this.coordinateBase = new Coordinates(origin, 3);
-        var graphics = this.add.graphics();
-        graphics.fillStyle(0xffff00, 1);
-
+        this.coordinateBase = new Coordinates(this.origin, 3);
+        this.onTableSync = onTableSync(this);
         this.seats = [];
-        for (let i = 0; i < 10; i++) {
-            const seatCoord = this.coordinateBase.seatCoordinates(i);
-            this.seats.push(new SitHereButton(seatCoord[0], seatCoord[1]));
-        }
-        for (let i = 0; i < 10; i++) {
-            this.seats[i].draw(graphics);
-        }
-
-        this.pendingSeatRequests = [];
     }
 
     preload() {
-        this.background = this.load.image('background', 'assets/pokerBackground.png');
-        this.table = this.load.image('table', 'assets/pokertable.png');
+        //this.background = this.load.image('background', 'assets/pokerBackground.png');
+        this.load.image('table', 'assets/pokertable.png');
+        this.load.image('testButton', 'assets/testButton.png');
+        this.load.image('testButtonHover', 'assets/testButtonHover.png');
+        this.load.image('testButtonClick', 'assets/testButtonClick.png');
     }
 
     create() {
-        this.socket = io('/game');
-        let params = new URLSearchParams(location.search);
-        const roomName = params.get('roomName');
-        const state = {};
-        this.socket.emit('JOIN', {roomName: roomName});
+        const roomName = new URLSearchParams(location.search).get('roomName');
+        this.client = new Client(roomName, this.onTableSync);
 
-        this.socket.on('TABLESYNC', function(gameState) {
-            state = {...gameState};
-        });
+        this.add.image(this.origin[0], this.origin[1], 'table');
 
-        this.socket.on('SIT_REQUEST', function(request) {
-        });
+        for (let i = 0; i < 9; i++) {
+            const [x, y] = this.coordinateBase.seatCoordinates(i);
+            this.seats.push(new Seat(this.scene, x, y, SeatStatus.OPEN, () => this.client.sit(i)));
+        }
 
-        this.socket.on('SIT_ACCEPT', function() {
-            console.log('You are seated!');
-        });
-
-        var graphics = this.add.graphics();
-        graphics.fillStyle(0xffff00, 1);
-        const [centerX, centerY] = [this.game.config.width / 2, this.game.config.height / 2];
-        this.add.image(centerX, centerY, 'table');
-        this.table.scale.setTo(this.scaleRatio, this.scaleRatio);
+        this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => {new PlayerManagementModal(this.scene.scene, this.client);});
     }
 
     update() {
-        for (const button of this.seats) {
-            button.draw(graphics);
-        }
-    }
-}
-
-const width = window.innerWidth * window.devicePixelRatio;
-const height = window.innerHeight * window.devicePixelRatio;
-this.origin = [width/2, height/2];
-this.scaleRatio = window.devicePixelRadio / 3;
-const config = {
-    type: Phaser.AUTO,
-    scale: {
-        parent: 'game',
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: width, 
-        height: height
-    }, 
-    scene: {
-        preload: this.preload,
-        create: this.create,
-        update: this.update
-    }
-};
-
-class SitHereButton {
-
-    constructor(x, y) {
-        this.open = true;
-        this.x = x;
-        this.y = y;
-    }
-
-    draw(graphics) {
-        graphics.fillRoundedRect(this.x, this.y, 200, 100, 32);
     }
 }
 
@@ -153,16 +125,6 @@ class Coordinates {
     }
 
 }
-
-function drawPlayerCard(graphics, name, chip, seat) {
-    //const [x, y] = seatCoordinates(seat);
-    console.log(this);
-    const [x, y] = [300, 200];
-    graphics.fillRoundedRect(x, y, 100, 100, 32);
-};
-
-const drawCommunityCards = (cards) => {
-};
 
 window.onload = () => {
     var game = new PokerGame();

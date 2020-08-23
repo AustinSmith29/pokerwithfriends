@@ -27,6 +27,7 @@ class CashGame {
         this.state = {
             players: [],
             lobby: [],
+            sitRequests: [],
             cards: [],
             board: [],
             blinds: [],
@@ -40,12 +41,17 @@ class CashGame {
         this.state.lobby.push(socketId);
     }
 
+    addSitRequest(socketId, sitRequest) {
+        this.state.sitRequests.push({socketId, ...sitRequest});
+    }
+
     setHost(player) {
         this.host = player;
     }
 
     bindHost(socketId) {
         this.host.socketId = socketId;
+        this.state.players.push({...this.host});
     }
 
     seatPlayer(player) {
@@ -77,14 +83,10 @@ class GameTable {
     }
 
     getGame(roomName) {
-        console.log(`Getting game with ${roomName} name`);
         if (this.games.has(roomName)) {
             const game = this.games.get(roomName);
-            console.log(`Game found: ${game}`);
-            console.log(game);
             return game;
         }
-        console.log('here for some reason');
     }
 }
 
