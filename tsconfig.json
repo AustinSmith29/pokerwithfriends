@@ -1,7 +1,12 @@
 {
     "compilerOptions": {
         "target": "es5",
-        "sourceMap": true
+        "module": "commonJs",
+        "sourceMap": true,
+        "allowJs": true,
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums", true
     },
     "include": [ 
         "**/*.ts"
