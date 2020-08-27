@@ -77,6 +77,7 @@ class PokerGame {
         }
 
         this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => {new PlayerManagementModal(this.scene.scene, this.client);});
+        this.startPlayingButton = new TextButton(this.scene.scene, 20, 80, 'Start Game', () => { this.client.startGame(); });
     }
 
     update() {

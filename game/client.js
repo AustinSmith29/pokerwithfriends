@@ -22,6 +22,10 @@ export class Client {
         socket.on('SIT_ACCEPT', () => {
             console.log('You have been seated!');
         });
+
+        socket.on('NEWHAND', (request) => {
+            console.log(`You received your hand: ${request.hand}`);
+        });
     }
 
     sit(seat) {
@@ -34,4 +38,7 @@ export class Client {
         this.status = 'PLAYING';
     }
 
+    startGame() {
+        this.socket.emit('DEAL_HAND', {roomName: this.roomName});
+    }
 }
