@@ -208,3 +208,4 @@ exports.isFullHouse = isFullHouse;
 exports.isFourOfKind = isFourOfKind;
 exports.isStraightFlush = isStraightFlush;
 exports.Card = Card;
+exports.createDeck = createDeck;

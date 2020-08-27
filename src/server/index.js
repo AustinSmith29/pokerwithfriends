@@ -23,6 +23,7 @@ app.get('/', function(req, res) {
 app.post('/', function(req, res) {
     const {gameType, roomName, action, ...rest} = req.body;
     if (action === 'create') {
+        console.log('Creating Game.');
         const game = poker.createGame(gameType, rest);
         gameTable.addGameSession(roomName, game);
         const {hostName, stack} = rest;
@@ -86,6 +87,21 @@ nsp.on('connection', function(socket) {
         game.seatPlayer(poker.Player(sitRequest.name, sitRequest.stack, sitRequest.seat, request.socketId, status='PLAYING'));
         game.state.sitRequests = game.state.sitRequests.filter(req => req.socketId !== request.socketId);
         console.log(game.state);
+        io.of('/game').emit('TABLESYNC', game.state);
+    });
+
+    socket.on('DEAL_HAND', function(request) {
+        console.log('Dealing new hand.');
+        const game = gameTable.getGame(request.roomName);
+        game.state.status = poker.State.NEWHAND;
+        console.log(`DEAL_HAND Request from ${socket.id}`);
+        console.log(io.of('/game'));
+        game.shuffleDeck();
+        for (const player of game.state.players) {
+            const hand = game.takeNCards(2);
+            console.log(`Delt hand ${hand} to player with id ${player.socketId}.`);
+            io.of('/game').connected[player.socketId].emit('NEWHAND', {hand});
+        }
         io.of('/game').emit('TABLESYNC', game.state);
     });
 });

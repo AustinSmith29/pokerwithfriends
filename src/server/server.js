@@ -1,3 +1,5 @@
+const poker = require('./poker.js');
+
 const Player = (name, stack, seat, socketId, status='LOBBY') => {
     return {
         name: name,
@@ -28,7 +30,7 @@ class CashGame {
             players: [],
             lobby: [],
             sitRequests: [],
-            cards: [],
+            deck: [],
             board: [],
             blinds: [],
             status: State.WAITING
@@ -56,6 +58,21 @@ class CashGame {
 
     seatPlayer(player) {
        this.state.players.push(player);
+    }
+
+    shuffleDeck() {
+        console.log('Shuffling Deck');
+        this.deck = poker.createDeck();
+    }
+
+    takeNCards(n) {
+        const cards = [];
+        for (let i = 0; i < n; i++) {
+            const card = this.deck.pop();
+            console.log(`Card ${card.rank} ${card.suit}`);
+            cards.push(card);    
+        }
+        return cards;
     }
 }
 
@@ -104,3 +121,4 @@ function createGame(gameType, params) {
 exports.createGame = createGame;
 exports.GameTable = GameTable;
 exports.Player = Player;
+exports.State = State;
