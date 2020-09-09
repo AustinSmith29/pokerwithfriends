@@ -4,66 +4,51 @@ const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  entry: {
-    app: './src/server/index.js',
-    vendors: ['phaser'],
+  context: path.resolve(__dirname, 'src', 'public'),
+  entry: path.resolve(__dirname, 'src', 'game', 'game.ts'),
+
+  output: {
+    filename: 'game.bundle.js',
+    path: path.resolve(__dirname, 'src', 'dist'),
   },
 
   module: {
     rules: [
       {
         test: /\.tsx?$/,
+        include: path.resolve(__dirname, 'src/game'),
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.js?$/,
+        include: path.resolve(__dirname, 'src/game'),
         use: 'ts-loader',
         exclude: /node_modules/,
       },
     ],
   },
 
+  devServer: {
+    contentBase: path.resolve(__dirname, 'src', 'dist'),
+      writeToDisk: true,
+      open: true,
+  },
+
   devtool: 'inline-source-map',
-
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js'],
-  },
-
-  output: {
-    filename: 'app.bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-  },
-
   mode: 'development',
 
-  devServer: {
-    contentBase: path.resolve(__dirname, 'dist'),
-    writeToDisk: true,
-    open: true,
-  },
-
   plugins: [
-    new CopyPlugin({
-      patterns: [
-        {
-          from: 'index.html',
-        },
-        {
-          from: 'assets/**/*',
-        },
-      ],
-    }),
-    new webpack.DefinePlugin({
-      'typeof CANVAS_RENDERER': JSON.stringify(true),
-      'typeof WEBGL_RENDERER': JSON.stringify(true),
-    }),
-  ],
-
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-      },
-    },
-  },
+      new CopyPlugin({
+          patterns: [
+              {
+                  from: '**/*',
+              }
+          ],
+      }),
+      new webpack.DefinePlugin({
+          'typeof CANVAS_RENDERER': JSON.stringify(true),
+          'typeof WEBGL_RENDERER': JSON.stringify(true)
+      })
+  ]
 };

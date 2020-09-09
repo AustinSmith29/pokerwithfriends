@@ -19,8 +19,10 @@
     "webpack-dev-server": "^3.11.0"
   },
   "scripts": {
-    "build": "webpack",
-    "dev": "webpack-dev-server",
+    "build": "tsc --project tsconfig.json",
+    "prestart": "npm run build",
+    "start": "nodemon src/index.js",
+    "dev-client": "webpack-dev-server",
     "test": "mocha"
   },
   "author": "Austin Smith",

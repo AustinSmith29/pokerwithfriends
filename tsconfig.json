@@ -6,9 +6,11 @@
         "allowJs": true,
         "noImplicitAny": true,
         "removeComments": true,
-        "preserveConstEnums", true
+        "preserveConstEnums": true,
+        "outDir": "./built"
     },
     "include": [ 
-        "**/*.ts"
+        "**/*.ts",
+        "**/*.js"
     ]
 }

@@ -8,16 +8,19 @@ const poker = require('./server.js');
 const hostname = '0.0.0.0';
 const port = 3000;
 
+/*
 app.use('/scripts/socket.io', express.static(__dirname + '/node_modules/socket.io-client/dist/'));
 app.use('/scripts/phaser', express.static(__dirname + '/node_modules/phaser/dist/'));
 app.use('/scripts', express.static(__dirname + '/scripts/'));
 app.use('/assets', express.static(__dirname + '/assets/'));
+*/
+app.use('/', express.static(__dirname + '/dist/'));
 app.use(express.urlencoded({extended: true}));
 
 const gameTable = new poker.GameTable();
 
 app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile('index.html', {root: __dirname + '/dist/'});
 });
 
 app.post('/', function(req, res) {
@@ -42,7 +45,7 @@ app.get('/game', function(req, res) {
     if (!req.query || !req.query.roomName) {
         res.redirect('/');
     }
-    res.sendFile(__dirname + '/game.html');
+    res.sendFile('game.html', {root: __dirname + '/dist/'});
 });
 
 const nsp = io.of('/game');
