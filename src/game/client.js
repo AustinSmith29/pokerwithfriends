@@ -1,3 +1,5 @@
+const io = require('socket.io-client');
+
 export class Client {
     constructor(roomName, onTableSync) {
         this.roomName = roomName;
