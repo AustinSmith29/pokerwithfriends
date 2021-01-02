@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import {Client} from './client.js';
+import {Client} from './client';
 import {TextButton} from './ui/TextButton.js';
 import {Seat, SeatStatus} from './ui/seat.js';
 import {Modal} from './ui/Modal.js';
@@ -26,23 +26,21 @@ class PokerGame extends Phaser.Scene {
     startPlayingButton: TextButton;
 
     onTableSync() {
-        /*
         const takenSeats = this.client.localState.players.map(player => player.seat);
         for (const seat of takenSeats) {
-            game.seats[seat].setStatus(SeatStatus.PLAYING);
+            this.seats[seat].setStatus(SeatStatus.PLAYING);
         }
 
-        for (const sitRequest of game.client.localState.sitRequests) {
-            game.seats[sitRequest.seat].setStatus(SeatStatus.RESERVED);
+        for (const sitRequest of this.client.localState.sitRequests) {
+            this.seats[sitRequest.seat].setStatus(SeatStatus.RESERVED);
         }
 
-        if (game.client.localState.sitRequests.length !== 0) {
-            game.playerManagementButton.setText(game.playerManagementButton.text + ` [${game.client.localState.sitRequests.length.toString()}]`);
+        if (this.client.localState.sitRequests.length !== 0) {
+            this.playerManagementButton.setText(this.playerManagementButton.text + ` [${this.client.localState.sitRequests.length.toString()}]`);
         }
         else {
-            game.playerManagementButton.setText('Players');
+            this.playerManagementButton.setText('Players');
         }
-         */
     }
     
 

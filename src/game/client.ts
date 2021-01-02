@@ -1,11 +1,26 @@
+import {Player, SitRequest} from '../server';
+
 const io = require('socket.io-client');
 
+interface GameState {
+    players: Player[];
+    sitRequests: SitRequest[];
+}
+
 export class Client {
-    constructor(roomName, onTableSync) {
+    roomName: string;
+    localState: GameState;
+    onTableSync: (newState: GameState) => void;
+    socket: SocketIO.Socket;
+
+    constructor(roomName: string, onTableSync: () => void) {
         this.roomName = roomName;
-        this.localState = {};
+        this.localState = {
+            players: [],
+            sitRequests: []
+        };
         this.onTableSync = onTableSync; // mechanism for updating rendering state based on logical state
-        this.socket = io('/game');
+        this.socket = io();
         this.socket.emit('JOIN', {roomName: roomName});
         this._bindClientEvents();
     }
@@ -30,14 +45,13 @@ export class Client {
         });
     }
 
-    sit(seat) {
-        this.socket.emit('SIT_REQUEST', {roomName: this.roomName, seat: seat, name: 'JoeTest', stack: 1000, socketId: this.socket.id});
-        this.status = 'PENDING';
+    sit(seat: number) {
+        const socketId = this.socket.id;
+        this.socket.emit('SIT_REQUEST', {roomName: this.roomName, seat: seat, name: 'JoeTest', stack: 1000, socketId});
     }
 
-    acceptSitRequest(fromSocketId) {
+    acceptSitRequest(fromSocketId: string) {
         this.socket.emit('SIT_ACCEPT', {roomName: this.roomName, socketId: fromSocketId});
-        this.status = 'PLAYING';
     }
 
     startGame() {

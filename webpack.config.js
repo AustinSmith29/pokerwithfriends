@@ -28,7 +28,9 @@ module.exports = {
       },
     ],
   },
-
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js']
+  },
   devServer: {
     contentBase: path.resolve(__dirname, 'src', 'dist'),
       writeToDisk: true,
