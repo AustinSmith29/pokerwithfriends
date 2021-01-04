@@ -2,7 +2,7 @@ import {Player, SitRequest} from '../server';
 
 const io = require('socket.io-client');
 
-interface GameState {
+export interface GameState {
     players: Player[];
     sitRequests: SitRequest[];
 }
@@ -13,7 +13,7 @@ export class Client {
     onTableSync: (newState: GameState) => void;
     socket: SocketIO.Socket;
 
-    constructor(roomName: string, onTableSync: () => void) {
+    constructor(roomName: string, onTableSync: (newState: GameState) => void) {
         this.roomName = roomName;
         this.localState = {
             players: [],
@@ -27,9 +27,10 @@ export class Client {
 
     _bindClientEvents() {
         const socket = this.socket;
+        const client = this;
         socket.on('TABLESYNC', (serverState) => {
-            this.localState = {...serverState};
-            this.onTableSync(serverState);
+            client.localState = {...serverState};
+            client.onTableSync(serverState);
         });
 
         socket.on('SIT_REQUEST', (request) => {

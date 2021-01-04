@@ -89,6 +89,7 @@ export class PokerGame implements PokerGameI {
 
     addClient(socket: SocketIO.Socket)  {
 
+        console.log('In addClient');
         const game: PokerGame = this;
         const state: PokerGameState = game.state;
         socket.leaveAll();
@@ -100,13 +101,8 @@ export class PokerGame implements PokerGameI {
         }
 
         socket.on('SIT_REQUEST', function (request: SitRequest) {
-            console.log(game.state);
             game.addSitRequest(request);
-            console.log(request);
-            console.log(socket.adapter)
-            console.log(socket.adapter.rooms);
-            game.io.in(this.roomName).emit('TABLESYNC', 'Test 123');
-            game.io.in(socket.id).emit('TABLESYNC', 'Test 123');
+            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
         });
 
         socket.on('SIT_ACCEPT', function(request: SitRequest) {
@@ -135,7 +131,6 @@ export class PokerGame implements PokerGameI {
                 }
             }
         });
-
     }
 
     seatPlayer(player: Player) {
