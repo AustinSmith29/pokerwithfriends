@@ -34,6 +34,12 @@ export class Frame extends Phaser.GameObjects.Container {
 
     unpack() {
     }
+
+    clear() {
+        this.removeAll();
+        this.nextElementX = 0;
+        this.nextElementY = 0;
+    }
 };
 
 export function Column(parentFrame, width, xOffset=0, yOffset=0) {

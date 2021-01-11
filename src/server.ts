@@ -1,4 +1,4 @@
-import {Card} from './poker.js';
+import {Card, createDeck} from './poker';
 
 type PlayerStatus = 'LOBBY' | 'PLAYING' | 'STANDING';
 
@@ -89,7 +89,6 @@ export class PokerGame implements PokerGameI {
 
     addClient(socket: SocketIO.Socket)  {
 
-        console.log('In addClient');
         const game: PokerGame = this;
         const state: PokerGameState = game.state;
         socket.leaveAll();
@@ -99,6 +98,7 @@ export class PokerGame implements PokerGameI {
         } else {
             this.bindHost(socket.id);
         }
+        game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
 
         socket.on('SIT_REQUEST', function (request: SitRequest) {
             game.addSitRequest(request);
@@ -107,7 +107,9 @@ export class PokerGame implements PokerGameI {
 
         socket.on('SIT_ACCEPT', function(request: SitRequest) {
             const existingRequests = state.sitRequests;
-            if (existingRequests.find((req: SitRequest) => req.socketId === request.socketId)) {
+            const matchingRequest = existingRequests.find(req => req.socketId === request.socketId);
+            
+            if (matchingRequest) {
                 const player: Player = {
                     name: request.name,
                     stack: request.stack,
@@ -118,16 +120,19 @@ export class PokerGame implements PokerGameI {
                 game.seatPlayer(player);
                 state.sitRequests = existingRequests.filter((req: SitRequest) => 
                     req.socketId !== request.socketId);
+                game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
             }
         });
 
         socket.on('DEAL_HAND', function() {
+            console.log('Dealing Hand');
             if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
                 state.status = 'DEAL';
-                // game.shuffleDeck();
+                game.shuffleDeck();
                 for (const player of state.players) {
-                    // const hand = game.takeNCards(2);
-                    // TODO: FINISH THIS SHIT
+                    const hand = [game.state.deck.pop(), game.state.deck.pop()];
+                    const socketId = player.socketId;
+                    game.io.sockets.connected[socketId].emit('NEWHAND', {hand});
                 }
             }
         });
@@ -135,6 +140,11 @@ export class PokerGame implements PokerGameI {
 
     seatPlayer(player: Player) {
         this.state.players.push(player);
+    }
+
+    shuffleDeck() {
+        this.state.deck = createDeck();
+        this.state.deck.sort(() => Math.random() - 0.5);
     }
 
 }

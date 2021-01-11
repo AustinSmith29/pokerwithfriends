@@ -9,6 +9,16 @@ export class PlayerManagementModal extends Modal {
         this._buildPlayerRows(client);
     }
 
+    acceptSitRequest(request, client) {
+        client.acceptSitRequest(request);
+        this.refresh(client);
+    }
+
+    refresh(client) {
+        this.rootFrame.clear();
+        this._buildPlayerRows(client);
+    }
+
     _buildPlayerRows(client) {
         const modal = this;
         const headerRow = Row(this.rootFrame, 40);
@@ -18,7 +28,7 @@ export class PlayerManagementModal extends Modal {
             const row = Row(this.rootFrame, 40);
             row.pack(this.scene.add.text(0, 0, request.name), 20);
             row.pack(this.scene.add.text(0, 0, request.stack), 20);
-            row.pack(new TextButton(this.scene, 0, 0, "Accept", () => client.acceptSitRequest(request.socketId)), 20);
+            row.pack(new TextButton(this.scene, 0, 0, "Accept", () => this.acceptSitRequest(request, client), 20));
             this.rootFrame.pack(row);
         }
 

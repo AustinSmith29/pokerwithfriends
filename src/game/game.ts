@@ -62,7 +62,7 @@ class PokerGame extends Phaser.Scene {
 
     create() {
         const roomName = new URLSearchParams(location.search).get('roomName');
-        this.client = new Client(roomName, this.onTableSync);
+        this.client = new Client(roomName, (gameState: GameState) => this.onTableSync(gameState));
 
         this.add.image(this.origin[0], this.origin[1], 'table');
 

@@ -48,11 +48,15 @@ export class Client {
 
     sit(seat: number) {
         const socketId = this.socket.id;
-        this.socket.emit('SIT_REQUEST', {roomName: this.roomName, seat: seat, name: 'JoeTest', stack: 1000, socketId});
+        const roomName = this.roomName;
+        this.socket.emit('SIT_REQUEST', {roomName, seat: seat, name: 'JoeTest', stack: 1000, socketId});
     }
 
-    acceptSitRequest(fromSocketId: string) {
-        this.socket.emit('SIT_ACCEPT', {roomName: this.roomName, socketId: fromSocketId});
+    acceptSitRequest(sitRequest: SitRequest) {
+        const roomName = this.roomName;
+        this.localState.sitRequests = this.localState.sitRequests.filter(req => req.socketId != sitRequest.socketId);
+        this.localState.players.push({name: sitRequest.name, stack: sitRequest.stack, seat: sitRequest.seat, socketId: sitRequest.socketId, status: 'PLAYING'});
+        this.socket.emit('SIT_ACCEPT', sitRequest);
     }
 
     startGame() {
