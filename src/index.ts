@@ -16,6 +16,9 @@ const server = http.createServer(app);
 io.listen(server);
 
 const gameTable = new GameTable();
+gameTable.addGameSession('Test', new PokerGame(10, 20, 1000, '', 'Test', io));
+const player: Player = {name: 'TestHost', stack: 1000, seat: 0, socketId: undefined, status: 'PLAYING'};
+gameTable.getGame('Test').setHost(player);
 
 app.get('/', function(req, res) {
     res.sendFile('index.html', {root: __dirname + '/dist/'});
