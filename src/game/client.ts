@@ -5,6 +5,8 @@ const io = require('socket.io-client');
 export interface GameState {
     players: Player[];
     sitRequests: SitRequest[];
+    hand: [];
+    localPlayerId: string;
 }
 
 export class Client {
@@ -15,22 +17,27 @@ export class Client {
 
     constructor(roomName: string, onTableSync: (newState: GameState) => void) {
         this.roomName = roomName;
+        this.onTableSync = onTableSync; // mechanism for updating rendering state based on logical state
+        const client = this;
+        this.socket = io();
+        this.socket.emit('JOIN', {roomName: roomName}, (id: string) => client.localState = {...client.localState, localPlayerId: id});
+        this._bindClientEvents();
+
         this.localState = {
             players: [],
-            sitRequests: []
+            sitRequests: [],
+            hand: [],
+            localPlayerId: undefined
         };
-        this.onTableSync = onTableSync; // mechanism for updating rendering state based on logical state
-        this.socket = io();
-        this.socket.emit('JOIN', {roomName: roomName});
-        this._bindClientEvents();
     }
 
     _bindClientEvents() {
         const socket = this.socket;
         const client = this;
         socket.on('TABLESYNC', (serverState) => {
-            client.localState = {...serverState};
-            client.onTableSync(serverState);
+            // Merge server and client state
+            client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players};
+            client.onTableSync(client.localState);
         });
 
         socket.on('SIT_REQUEST', (request) => {
@@ -43,6 +50,8 @@ export class Client {
 
         socket.on('NEWHAND', (request) => {
             console.log(`You received your hand: ${request.hand}`);
+            client.localState = {...client.localState, hand: request.hand};
+            client.onTableSync(client.localState);
         });
     }
 

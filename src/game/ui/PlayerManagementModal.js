@@ -2,10 +2,13 @@ import {Modal} from './Modal.js';
 import {Frame, Row, Column} from './Container.js';
 import {TextButton} from './TextButton.js';
 
+const RENDER_DEPTH = 1000;
+
 export class PlayerManagementModal extends Modal {
     constructor(scene, client) {
-        super(scene, 20, 20, 500, 400);
+        super(scene, 20, 20, 500, 400, RENDER_DEPTH);
         this.rootFrame = new Frame(scene, 500, 400, 20, 20, 'column');
+        this.rootFrame.depth = RENDER_DEPTH;
         this._buildPlayerRows(client);
     }
 

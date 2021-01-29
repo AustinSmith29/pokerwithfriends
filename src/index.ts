@@ -51,9 +51,10 @@ app.get('/game', function(req, res) {
 
 io.on('connection', function(socket: SocketIO.Socket) {
     console.log('New socket connection');
-    socket.on('JOIN', function(msg) {
+    socket.on('JOIN', function(msg, func) {
         const game = gameTable.getGame(msg.roomName);
         game.addClient(socket);
+        func(socket.id);
     });
 });
 

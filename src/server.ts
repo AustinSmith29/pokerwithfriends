@@ -1,6 +1,6 @@
 import {Card, createDeck} from './poker';
 
-type PlayerStatus = 'LOBBY' | 'PLAYING' | 'STANDING';
+type PlayerStatus = 'LOBBY' | 'PLAYING' | 'FOLD' | 'STANDING';
 
 export interface Player {
     name: string;
@@ -36,6 +36,10 @@ interface PokerGameState {
     bigBlind: number;
     sitRequests: SitRequest[];
     lobby: SocketIO.Socket[];
+    //whoseTurn: number;
+    //dealerPosition: number;
+    //smallBlindPosition: number;
+    //bigBlindPosition: number;
 }
 
 interface PokerGameI {
@@ -101,6 +105,7 @@ export class PokerGame implements PokerGameI {
         game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
 
         socket.on('SIT_REQUEST', function (request: SitRequest) {
+            console.log('Sit Request');
             game.addSitRequest(request);
             game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
         });
@@ -126,7 +131,7 @@ export class PokerGame implements PokerGameI {
 
         socket.on('DEAL_HAND', function() {
             console.log('Dealing Hand');
-            if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
+            // if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
                 state.status = 'DEAL';
                 game.shuffleDeck();
                 for (const player of state.players) {
@@ -134,7 +139,20 @@ export class PokerGame implements PokerGameI {
                     const socketId = player.socketId;
                     game.io.sockets.connected[socketId].emit('NEWHAND', {hand});
                 }
-            }
+            //}
+            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
+
+            // find out whose turn it is then send TURN_START message to that player
+            //game.io.sockets.connected[socketId].emit('TURN_START', {});
+        });
+
+        socket.on('TURN_END', function() {
+            // update state
+            // tablesync
+            // if more players to act
+            //      send next player TURN_START message
+            // else
+            //      advance to next round
         });
     }
 
