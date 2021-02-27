@@ -1,11 +1,11 @@
 import * as Phaser from 'phaser';
 import {Client, GameState} from './client';
+import {PlayerManagementModal} from './ui/PlayerManagementModal';
 import {TextButton} from './ui/TextButton.js';
-import {Seat, SeatStatus} from './ui/seat.js';
-import {CardHolder} from './ui/CardHolder.js';
+import {Seat, SeatStatus} from './ui/Seat';
+import {CardHolder} from './ui/CardHolder';
 import {Modal} from './ui/Modal.js';
 import {Frame, Row, Column} from './ui/Container.js';
-import {PlayerManagementModal} from './ui/PlayerManagementModal.js';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
     active: true,
@@ -24,39 +24,9 @@ class PokerGame extends Phaser.Scene {
     client: Client;
     seats: Seat[];
     cardholders: CardHolder[];
+    playerManagementModal: PlayerManagementModal;
     playerManagementButton: TextButton;
     startPlayingButton: TextButton;
-
-    onTableSync(newState: GameState) {
-        const takenSeats = newState.players.map(player => player.seat);
-        for (const player of newState.players) {
-            this.seats[player.seat].setPlayer(player);
-            this.seats[player.seat].setStatus(SeatStatus.PLAYING);
-
-            if (player.status == 'PLAYING' && player.socketId === this.client.localState.localPlayerId) {
-                this.cardholders[player.seat].setHand(this.client.localState.hand);
-            }
-            else if (player.status == 'PLAYING') {
-                this.cardholders[player.seat].setHand(['X', 'X']);
-            }
-        }
-        for (const seat of takenSeats) {
-            this.seats[seat].setPlayer(newState.players.find(player => player.seat == seat));
-            this.seats[seat].setStatus(SeatStatus.PLAYING);
-        }
-
-        for (const sitRequest of newState.sitRequests) {
-            this.seats[sitRequest.seat].setStatus(SeatStatus.RESERVED);
-        }
-
-        if (newState.sitRequests.length !== 0) {
-            this.playerManagementButton.setText(this.playerManagementButton.text + ` [${this.client.localState.sitRequests.length.toString()}]`);
-        }
-        else {
-            this.playerManagementButton.setText('Players');
-        }
-    }
-    
 
     init() {
         this.origin = [this.game.config.width as number / 2, this.game.config.height as number /2];
@@ -86,19 +56,20 @@ class PokerGame extends Phaser.Scene {
 
     create() {
         const roomName = new URLSearchParams(location.search).get('roomName');
-        this.client = new Client(roomName, (gameState: GameState) => this.onTableSync(gameState));
+        this.client = new Client(roomName);
 
         //this.add.image(this.origin[0], this.origin[1], 'table');
         //let card = this.add.image(400, 400, 'ace_spades');
         //card.setScale(0.40);
         for (let i = 0; i < 9; i++) {
             const [x, y] = this.coordinateBase.seatCoordinates(i);
-            this.seats.push(new Seat(this.scene, x, y, SeatStatus.OPEN, () => this.client.sit(i)));
-            this.cardholders.push(new CardHolder(this.scene, x, y));
+            this.seats.push(new Seat(this.scene.scene, x, y, SeatStatus.OPEN, this.client));
+            this.cardholders.push(new CardHolder(this.scene.scene, x, y, this.client));
         }
 
-        this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => {new PlayerManagementModal(this.scene.scene, this.client);});
-        this.startPlayingButton = new TextButton(this.scene.scene, 20, 80, 'Start Game', () => { this.client.startGame(); });
+        this.playerManagementModal = new PlayerManagementModal(this.scene.scene, this.client);
+        this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => this.playerManagementModal.show());
+        this.startPlayingButton = new TextButton(this.scene.scene, 20, 80, 'Start Game', () => this.client.startGame());
     }
 
     update() {

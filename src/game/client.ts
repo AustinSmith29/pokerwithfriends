@@ -9,15 +9,24 @@ export interface GameState {
     localPlayerId: string;
 }
 
-export class Client {
-    roomName: string;
-    localState: GameState;
-    onTableSync: (newState: GameState) => void;
-    socket: SocketIO.Socket;
+export interface StateObserver {
+    onNotify: (state: GameState) => void;
+}
 
-    constructor(roomName: string, onTableSync: (newState: GameState) => void) {
+export interface StateSubject {
+    addObserver: (observer: StateObserver) => void;
+    removeObserver: (observer: StateObserver) => void;
+    notify: (state: GameState) => void;
+}
+
+export class Client implements StateSubject {
+    private roomName: string;
+    private localState: GameState;
+    private stateObservers: StateObserver[];
+    private socket: SocketIO.Socket;
+
+    constructor(roomName: string) {
         this.roomName = roomName;
-        this.onTableSync = onTableSync; // mechanism for updating rendering state based on logical state
         const client = this;
         this.socket = io();
         this.socket.emit('JOIN', {roomName: roomName}, (id: string) => client.localState = {...client.localState, localPlayerId: id});
@@ -29,6 +38,8 @@ export class Client {
             hand: [],
             localPlayerId: undefined
         };
+
+        this.stateObservers = [];
     }
 
     _bindClientEvents() {
@@ -37,7 +48,7 @@ export class Client {
         socket.on('TABLESYNC', (serverState) => {
             // Merge server and client state
             client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players};
-            client.onTableSync(client.localState);
+            client.notify(client.localState);
         });
 
         socket.on('SIT_REQUEST', (request) => {
@@ -47,12 +58,18 @@ export class Client {
         socket.on('SIT_ACCEPT', () => {
             console.log('You have been seated!');
         });
+    }
 
-        socket.on('NEWHAND', (request) => {
-            console.log(`You received your hand: ${request.hand}`);
-            client.localState = {...client.localState, hand: request.hand};
-            client.onTableSync(client.localState);
-        });
+    addObserver(observer: StateObserver) {
+        this.stateObservers.push(observer);
+    }
+
+    removeObserver(observer: StateObserver) {
+        this.stateObservers = this.stateObservers.filter(obs => obs !== observer)
+    }
+
+    notify(state: GameState) {
+        this.stateObservers.forEach(observer => observer.onNotify(state));
     }
 
     sit(seat: number) {

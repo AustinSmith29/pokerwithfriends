@@ -16,11 +16,11 @@ const HandRankings = Object.freeze({
 });
 
 const Ranks = Object.freeze({
-    TWO: 1,
-    JACK: 10,
-    QUEEN: 11,
-    KING: 12,
-    ACE: 13
+    TWO: 0,
+    JACK: 9,
+    QUEEN: 10,
+    KING: 11,
+    ACE: 12
 });
 
 const getHighCard = (hand: Card[]) => Math.max(...hand.map(card => card.rank));
@@ -79,7 +79,7 @@ export const isStraight = (hand: Card[]) => {
         // We need to determine if the ace is low or high.
         // If a king is in the hand then it has to be treated as a 13 to make a straight.
         const isKingInHand = ranks.includes(Ranks.KING);
-        let aceValue = (isKingInHand) ? Ranks.ACE : 0;
+        let aceValue = (isKingInHand) ? Ranks.ACE : -1;
         ranks[ranks.indexOf(Ranks.ACE)] = aceValue;
     }
     ranks.sort((a,b) => a - b); 

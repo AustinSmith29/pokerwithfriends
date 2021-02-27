@@ -3,6 +3,8 @@ import http from 'http';
 import url from 'url';
 import {GameTable, Player, PokerGame}from './server';
 
+//TODO: Add config driven build. i.e a dev build for local machine, and a production build.
+
 const io = require('socket.io')(http);
 
 const HOSTNAME = '0.0.0.0';

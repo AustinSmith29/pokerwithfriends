@@ -8,6 +8,7 @@ export interface Player {
     seat: number;
     socketId: string;
     status: PlayerStatus;
+    hand?: Card[];
 }
 
 
@@ -137,7 +138,8 @@ export class PokerGame implements PokerGameI {
                 for (const player of state.players) {
                     const hand = [game.state.deck.pop(), game.state.deck.pop()];
                     const socketId = player.socketId;
-                    game.io.sockets.connected[socketId].emit('NEWHAND', {hand});
+                    player.hand = hand;
+                    // game.io.sockets.connected[socketId].emit('NEWHAND', {hand});
                 }
             //}
             game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
@@ -167,6 +169,7 @@ export class PokerGame implements PokerGameI {
 
 }
 
+// The GameTable stores all the concurrent games the server is currently handling.
 export class GameTable {
     constructor() {
         this.games = new Map();
