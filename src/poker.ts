@@ -1,4 +1,7 @@
-const Card = (r, s) => ({rank: r, suit: s});
+export interface Card {
+    rank: number;
+    suit: number;
+};
 
 const HandRankings = Object.freeze({
     HIGH: 0,
@@ -13,20 +16,20 @@ const HandRankings = Object.freeze({
 });
 
 const Ranks = Object.freeze({
-    TWO: 1,
-    JACK: 10,
-    QUEEN: 11,
-    KING: 12,
-    ACE: 13
+    TWO: 0,
+    JACK: 9,
+    QUEEN: 10,
+    KING: 11,
+    ACE: 12
 });
 
-const getHighCard = (hand) => Math.max(...hand.map(card => card.rank));
-const getCards = (hand, n) => {
+const getHighCard = (hand: Card[]) => Math.max(...hand.map(card => card.rank));
+const getCards = (hand: Card[], n: number) => {
     hand.sort((a,b) => b.rank - a.rank);
     return hand.splice(0, n+1);
 };
 
-const count = (elem, arry) => {
+const count = (elem: any, arry: any[]) => {
     let count = 0;
     for (const item of arry) {
         if (item === elem) {
@@ -37,7 +40,7 @@ const count = (elem, arry) => {
 };
 
 /* Returns the element that occurs n times in array. */
-const occurs = (n, arry) => {
+const occurs = (n: number, arry: any[]) => {
     let counts = new Map();
     for (const elem of arry) {
         const count = counts.get(elem);
@@ -57,26 +60,26 @@ const occurs = (n, arry) => {
 };
 
 /* Removes all instances of element from the array. */
-const remove = (elem, array) => array.filter(e => e != elem);
+const remove = (elem: any, array: any[]) => array.filter(e => e != elem);
 
-const handRanks = (hand) => hand.map(card => card.rank);
-const handSuits = (hand) => hand.map(card => card.suit);
+const handRanks = (hand: Card[]) => hand.map(card => card.rank);
+const handSuits = (hand: Card[]) => hand.map(card => card.suit);
 
 /* These tests must be applied to hand in decreasing order of strength i.e straight flushes 
  * before four of kind... etc. This is because each function checks for only minimum viability. 
  * For example, isThreeOfKind will return true if it is passed a Full House because it detects 
  * three of the same cards.
 */
-const isPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 2; 
-const isTwoPair = (hand) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
-const isThreeOfKind = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 3;
-const isStraight = (hand) => {
+export const isPair = (hand: Card[]) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 2; 
+export const isTwoPair = (hand: Card[]) => count(2, handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
+export const isThreeOfKind = (hand: Card[]) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 3;
+export const isStraight = (hand: Card[]) => {
     const ranks = handRanks(hand);
     if (ranks.find(rank => rank === Ranks.ACE)) {
         // We need to determine if the ace is low or high.
         // If a king is in the hand then it has to be treated as a 13 to make a straight.
         const isKingInHand = ranks.includes(Ranks.KING);
-        let aceValue = (isKingInHand) ? Ranks.ACE : 0;
+        let aceValue = (isKingInHand) ? Ranks.ACE : -1;
         ranks[ranks.indexOf(Ranks.ACE)] = aceValue;
     }
     ranks.sort((a,b) => a - b); 
@@ -88,10 +91,10 @@ const isStraight = (hand) => {
     hand.sort((a, b) => a.rank - b.rank);
     return true;
 };
-const isFlush = (hand) => count(hand[0].suit, handSuits(hand)) === 5;
-const isFullHouse = (hand) => isPair(hand) && isThreeOfKind(hand);
-const isFourOfKind = (hand) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
-const isStraightFlush = (hand) => isStraight(hand) && isFlush(hand);
+export const isFlush = (hand: Card[]) => count(hand[0].suit, handSuits(hand)) === 5;
+export const isFullHouse = (hand: Card[]) => isPair(hand) && isThreeOfKind(hand);
+export const isFourOfKind = (hand: Card[]) => Math.max(...handRanks(hand).map(card => count(card, handRanks(hand)))) === 4;
+export const isStraightFlush = (hand: Card[]) => isStraight(hand) && isFlush(hand);
 
 // TYPE, STRENGTH, TIEBREAKER?
 // HIGH, K 
@@ -103,7 +106,7 @@ const isStraightFlush = (hand) => isStraight(hand) && isFlush(hand);
 // FULLHOUSE, 10,K
 // FOUR KIND, 3, A
 // STRAIGHTFLUSH, A
-const handStrength = (hand) => {
+export const handStrength = (hand: Card[]) => {
     if (isStraightFlush(hand)) {
         return { type: HandRankings.STRAIGHT_FLUSH, strength: getHighCard(hand) };
     }
@@ -148,7 +151,7 @@ const handStrength = (hand) => {
     }
 };
 
-const comparator = (a, b) => {
+const comparator = (a: any, b: any) => {
     if (Array.isArray(a) && Array.isArray(b)) {
         a.sort((a,b) => b - a);
         b.sort((a,b) => b - a);
@@ -173,7 +176,7 @@ const comparator = (a, b) => {
     }
 };
 
-exports.doesHandWin = (a, b) => {
+export const doesHandWin = (a: Card[], b: Card[]) => {
     const aHandStrength = handStrength(a);
     const bHandStrength = handStrength(b);
     const type = comparator(aHandStrength.type, bHandStrength.type);
@@ -189,23 +192,12 @@ exports.doesHandWin = (a, b) => {
     return type;
 };
 
-const createDeck = () => {
+export const createDeck = () => {
     const deck = [];
     for (let rank = Ranks.TWO; rank <= Ranks.ACE; rank++) {
         for (let suit = 0; suit < 4; suit++) {
-            deck.push(Card(rank, suit));
+            deck.push({rank, suit});
         }
     }
     return deck;
 };
-
-exports.isPair = isPair;
-exports.isTwoPair = isTwoPair;
-exports.isThreeOfKind = isThreeOfKind;
-exports.isStraight = isStraight;
-exports.isFlush = isFlush;
-exports.isFullHouse = isFullHouse;
-exports.isFourOfKind = isFourOfKind;
-exports.isStraightFlush = isStraightFlush;
-exports.Card = Card;
-exports.createDeck = createDeck;

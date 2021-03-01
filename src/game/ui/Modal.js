@@ -1,5 +1,5 @@
 export class Modal extends Phaser.GameObjects.GameObject {
-    constructor(scene, x, y, w, h, style=undefined) {
+    constructor(scene, x, y, w, h, depth=0, style=undefined) {
         super(scene, "Modal");
         this.scene = scene;
         this.x = x;
@@ -8,6 +8,7 @@ export class Modal extends Phaser.GameObjects.GameObject {
         this.h = w;
         this.style = this._setStyle(style);
         this.graphics = scene.add.graphics();
+        this.graphics.depth = depth;
 
         this._createWindow(x, y, w, h);
     }

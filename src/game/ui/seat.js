@@ -1,4 +1,6 @@
-import {Button} from './button.js'
+import {Button} from './button.js';
+import {Modal} from './Modal.js';
+import {Frame, Row, Column} from './Container.js';
 
 export const SeatStatus = Object.freeze( {
     'OPEN': 1,
@@ -6,6 +8,22 @@ export const SeatStatus = Object.freeze( {
     'PLAYING': 3,
     'STANDING': 4
 });
+
+class PlayerSeat extends Modal {
+    constructor(scene, x, y, player) {
+        super(scene, x-50, y-25, 100, 50, 100);
+        this.rootFrame = new Frame(scene, 50, 100, x-50, y-25, 'column');
+        this.refresh(player);
+        this.depth = 100;
+        this.rootFrame.depth = 100;
+    }
+
+    refresh(player) {
+        this.rootFrame.clear();
+        this.rootFrame.pack(this.scene.add.text(0, 0, player.name), 20);
+        this.rootFrame.pack(this.scene.add.text(0, 0, player.stack), 20);
+    }
+}
 
 export class Seat extends Phaser.GameObjects.GameObject {
     constructor(scene, x, y, seatStatus, onSit) {
@@ -16,6 +34,11 @@ export class Seat extends Phaser.GameObjects.GameObject {
         this.onSit = onSit;
         this.seatStatus = seatStatus;
         this.setStatus(seatStatus);
+        this.player = undefined;
+    }
+
+    setPlayer(player) {
+        this.player = player;
     }
 
     setStatus(newStatus) {
@@ -31,7 +54,7 @@ export class Seat extends Phaser.GameObjects.GameObject {
                 this.object = this.scene.add.text(this.x, this.y, 'Pending');
                 break;
             default:
-                this.object = this.scene.add.text(this.x, this.y, 'Playing');
+                this.object = new PlayerSeat(this.scene, this.x, this.y, this.player);
         }
     }
 }

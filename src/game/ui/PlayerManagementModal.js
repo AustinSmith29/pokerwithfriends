@@ -2,10 +2,23 @@ import {Modal} from './Modal.js';
 import {Frame, Row, Column} from './Container.js';
 import {TextButton} from './TextButton.js';
 
+const RENDER_DEPTH = 1000;
+
 export class PlayerManagementModal extends Modal {
     constructor(scene, client) {
-        super(scene, 20, 20, 500, 400);
+        super(scene, 20, 20, 500, 400, RENDER_DEPTH);
         this.rootFrame = new Frame(scene, 500, 400, 20, 20, 'column');
+        this.rootFrame.depth = RENDER_DEPTH;
+        this._buildPlayerRows(client);
+    }
+
+    acceptSitRequest(request, client) {
+        client.acceptSitRequest(request);
+        this.refresh(client);
+    }
+
+    refresh(client) {
+        this.rootFrame.clear();
         this._buildPlayerRows(client);
     }
 
@@ -18,7 +31,7 @@ export class PlayerManagementModal extends Modal {
             const row = Row(this.rootFrame, 40);
             row.pack(this.scene.add.text(0, 0, request.name), 20);
             row.pack(this.scene.add.text(0, 0, request.stack), 20);
-            row.pack(new TextButton(this.scene, 0, 0, "Accept", () => client.acceptSitRequest(request.socketId)), 20);
+            row.pack(new TextButton(this.scene, 0, 0, "Accept", () => this.acceptSitRequest(request, client), 20));
             this.rootFrame.pack(row);
         }
 
