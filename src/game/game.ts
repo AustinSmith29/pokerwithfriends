@@ -3,8 +3,7 @@ import {Client, GameState} from './client';
 import {PlayerManagementModal} from './ui/PlayerManagementModal';
 import {TextButton} from './ui/TextButton.js';
 import {Seat, SeatStatus} from './ui/Seat';
-import {CardHolder} from './ui/CardHolder';
-import {Modal} from './ui/Modal.js';
+import {Modal} from './ui/Modal';
 import {Frame, Row, Column} from './ui/Container.js';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
@@ -23,7 +22,6 @@ class PokerGame extends Phaser.Scene {
     coordinateBase: Coordinates;
     client: Client;
     seats: Seat[];
-    cardholders: CardHolder[];
     playerManagementModal: PlayerManagementModal;
     playerManagementButton: TextButton;
     startPlayingButton: TextButton;
@@ -34,7 +32,6 @@ class PokerGame extends Phaser.Scene {
         //this.coordinateBase = new Coordinates(origin, scaleRatio);
         this.coordinateBase = new Coordinates(this.origin, 3);
         this.seats = [];
-        this.cardholders = [];
     }
 
     preload() {
@@ -64,7 +61,6 @@ class PokerGame extends Phaser.Scene {
         for (let i = 0; i < 9; i++) {
             const [x, y] = this.coordinateBase.seatCoordinates(i);
             this.seats.push(new Seat(this.scene.scene, x, y, SeatStatus.OPEN, this.client));
-            this.cardholders.push(new CardHolder(this.scene.scene, x, y, this.client));
         }
 
         this.playerManagementModal = new PlayerManagementModal(this.scene.scene, this.client);

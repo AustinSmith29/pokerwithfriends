@@ -1,4 +1,4 @@
-import {Modal} from './Modal.js';
+import {Modal} from './Modal';
 import {Frame, Row, Column} from './Container.js';
 import {TextButton} from './TextButton.js';
 import {StateObserver, Client, GameState} from '../client';
@@ -21,12 +21,12 @@ export class PlayerManagementModal extends Modal implements StateObserver{
 
     show() {
         this.rootFrame.visible = true;
-        this.graphics.visible = true;
+        this.visible = true;
     }
 
     hide() {
         this.rootFrame.visible = false;
-        this.graphics.visible = false;
+        this.visible = false;
     }
 
     onNotify(state: GameState) {
@@ -42,7 +42,7 @@ export class PlayerManagementModal extends Modal implements StateObserver{
         for (const request of state.sitRequests) {
             const row = Row(this.rootFrame, 40);
             row.pack(this.scene.add.text(0, 0, request.name), 20);
-            row.pack(this.scene.add.text(0, 0, request.stack), 20);
+            row.pack(this.scene.add.text(0, 0, request.stack.toString()), 20);
             row.pack(new TextButton(this.scene, 0, 0, "Accept", () => this.client.acceptSitRequest(request)), 20);
             this.rootFrame.pack(row);
         }
@@ -50,7 +50,7 @@ export class PlayerManagementModal extends Modal implements StateObserver{
         for (const player of state.players) {
             const row = Row(this.rootFrame, 40);
             row.pack(this.scene.add.text(0, 0, player.name), 20);
-            row.pack(this.scene.add.text(0, 0, player.stack), 20);
+            row.pack(this.scene.add.text(0, 0, player.stack.toString()), 20);
             row.pack(new TextButton(this.scene, 0, 0, "Kick", () => console.log('Kicked Player')), 20);
             this.rootFrame.pack(row);
         }
