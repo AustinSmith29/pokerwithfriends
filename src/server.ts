@@ -37,10 +37,8 @@ interface PokerGameState {
     bigBlind: number;
     sitRequests: SitRequest[];
     lobby: SocketIO.Socket[];
-    //whoseTurn: number;
-    //dealerPosition: number;
-    //smallBlindPosition: number;
-    //bigBlindPosition: number;
+    dealerPosition: number;
+    whoseTurn?: Player;
 }
 
 interface PokerGameI {
@@ -67,7 +65,9 @@ export class PokerGame implements PokerGameI {
             smallBlind: smallBlind,
             bigBlind: bigBlind,
             status: 'WAITING',
-            lobby: []
+            lobby: [],
+            dealerPosition: 0,
+            whoseTurn: undefined
         };
         this.host = undefined;
         this.password = password;
@@ -82,6 +82,7 @@ export class PokerGame implements PokerGameI {
     bindHost(socketId: string) {
         this.host.socketId = socketId;
         this.state.players.push(this.host);
+        this.state.whoseTurn = this.host;
     }
 
     addWatcher(socket: SocketIO.Socket) {
@@ -93,7 +94,6 @@ export class PokerGame implements PokerGameI {
     }
 
     addClient(socket: SocketIO.Socket)  {
-
         const game: PokerGame = this;
         const state: PokerGameState = game.state;
         socket.leaveAll();
@@ -106,7 +106,6 @@ export class PokerGame implements PokerGameI {
         game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
 
         socket.on('SIT_REQUEST', function (request: SitRequest) {
-            console.log('Sit Request');
             game.addSitRequest(request);
             game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
         });
@@ -123,7 +122,7 @@ export class PokerGame implements PokerGameI {
                     socketId: request.socketId,
                     status: 'PLAYING'
                 };
-                game.seatPlayer(player);
+                state.players.push(player);
                 state.sitRequests = existingRequests.filter((req: SitRequest) => 
                     req.socketId !== request.socketId);
                 game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
@@ -131,35 +130,56 @@ export class PokerGame implements PokerGameI {
         });
 
         socket.on('DEAL_HAND', function() {
+            // TODO: For right now, for debug purposes, everyone will be able to see
+            // everyone else's hand. Eventually I want to make a special "debug mode"
+            // option that will enable this.
             console.log('Dealing Hand');
-            // if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
+            if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
                 state.status = 'DEAL';
                 game.shuffleDeck();
                 for (const player of state.players) {
                     const hand = [game.state.deck.pop(), game.state.deck.pop()];
                     const socketId = player.socketId;
                     player.hand = hand;
-                    // game.io.sockets.connected[socketId].emit('NEWHAND', {hand});
                 }
-            //}
-            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
+            }
+            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], whoseTurn: state.whoseTurn});
 
             // find out whose turn it is then send TURN_START message to that player
             //game.io.sockets.connected[socketId].emit('TURN_START', {});
         });
 
         socket.on('TURN_END', function() {
-            // update state
-            // tablesync
-            // if more players to act
-            //      send next player TURN_START message
-            // else
-            //      advance to next round
+            // verify message is coming from socket of player whose turn it is
+            const activePlayer = state.whoseTurn;
+            if (activePlayer.socketId === socket.id) {
+                const nextPlayer = game._getNextActivePlayer();
+                state.whoseTurn = nextPlayer;
+                game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], whoseTurn: nextPlayer});
+                // update state
+                // tablesync
+                // if more players to act
+                //      send next player TURN_START message
+                // else
+                //      advance to next round
+            }
         });
     }
 
-    seatPlayer(player: Player) {
-        this.state.players.push(player);
+    _getNextActivePlayer(): Player {
+        const playerSorter = (a: Player, b: Player) => {
+            if (a.seat < b.seat) {
+                return -1;
+            }
+            if (a.seat > b.seat) {
+                return 1;
+            }
+            return 0;
+        };
+        const playersInSeatOrder = [...this.state.players].sort(playerSorter);
+        const activePlayerIndex = playersInSeatOrder.findIndex(player => player === this.state.whoseTurn);
+        const nextPlayer = playersInSeatOrder[(activePlayerIndex + 1) % playersInSeatOrder.length];
+        return nextPlayer;
     }
 
     shuffleDeck() {

@@ -1,4 +1,5 @@
 import {Button} from './button.js';
+import {TextButton} from './TextButton.js';
 import {Modal} from './Modal';
 import {Frame, Row, Column} from './Container.js';
 import {StateObserver, Client, GameState} from '../client';
@@ -141,6 +142,7 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
     private playerInfo: PlayerInfo;
     private sitButton: Button;
     private playerCards: CardHolder; // TODO: Change name of CardHolder... don't like it.
+    private nextTurnButton: TextButton;
     private reservedText: Phaser.GameObjects.Text;
 
     constructor(scene: Phaser.Scene, x: number, y: number, seatStatus: SeatStatus, client: Client) {
@@ -156,6 +158,9 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
         this.sitButton = new Button(this.scene, this.x, this.y, 'testButton', 'testButtonHover', 'testButtonClick', () => this.onSit());
         this.reservedText = this.scene.add.text(this.x, this.y, 'Pending');
         this.playerCards = new CardHolder(this.scene, this.x, this.y);
+        this.nextTurnButton = new TextButton(this.scene, 350, 350, 'Next Turn', () => this.client.endTurn()); // TEMPORARY... for testing
+        this.nextTurnButton.visible = false;
+        this.nextTurnButton.active = false;
 
         this.setStatus(seatStatus);
         this.client.addObserver(this);
@@ -202,11 +207,20 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
     onNotify(state: GameState) {
         const isSeatTaken = state.players.map(player => player.seat).includes(this.id);
         const isSeatRequested = state.sitRequests.map(request => request.seat).includes(this.id);
+        const isMyTurn = (this.client.socket.id === state.whoseTurn?.socketId);
         if (isSeatTaken) {
             const player = state.players.find(player => player.seat === this.id);
             this.playerInfo.display(player);
             this.playerCards.setHand(player.hand);
             this.setStatus(SeatStatus.PLAYING);
+            if (isMyTurn) {
+                this.nextTurnButton.visible = true;
+                this.nextTurnButton.active = true;
+            }
+            else {
+                this.nextTurnButton.visible = false;
+                this.nextTurnButton.active = false;
+            }
         }
         else if (isSeatRequested) {
             this.setStatus(SeatStatus.RESERVED);

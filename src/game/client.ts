@@ -5,8 +5,8 @@ const io = require('socket.io-client');
 export interface GameState {
     players: Player[];
     sitRequests: SitRequest[];
-    hand: [];
     localPlayerId: string;
+    whoseTurn?: Player;
 }
 
 export interface StateObserver {
@@ -23,7 +23,7 @@ export class Client implements StateSubject {
     private roomName: string;
     private localState: GameState;
     private stateObservers: StateObserver[];
-    private socket: SocketIO.Socket;
+    readonly socket: SocketIO.Socket;
 
     constructor(roomName: string) {
         this.roomName = roomName;
@@ -35,7 +35,6 @@ export class Client implements StateSubject {
         this.localState = {
             players: [],
             sitRequests: [],
-            hand: [],
             localPlayerId: undefined
         };
 
@@ -47,16 +46,8 @@ export class Client implements StateSubject {
         const client = this;
         socket.on('TABLESYNC', (serverState) => {
             // Merge server and client state
-            client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players};
+            client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players, whoseTurn: serverState?.whoseTurn};
             client.notify(client.localState);
-        });
-
-        socket.on('SIT_REQUEST', (request) => {
-            console.log('Recieved sit request.');
-        });
-
-        socket.on('SIT_ACCEPT', () => {
-            console.log('You have been seated!');
         });
     }
 
@@ -72,10 +63,13 @@ export class Client implements StateSubject {
         this.stateObservers.forEach(observer => observer.onNotify(state));
     }
 
+    endTurn() {
+        this.socket.emit('TURN_END');
+    }
+
     sit(seat: number) {
         const socketId = this.socket.id;
-        const roomName = this.roomName;
-        this.socket.emit('SIT_REQUEST', {roomName, seat: seat, name: 'JoeTest', stack: 1000, socketId});
+        this.socket.emit('SIT_REQUEST', {seat: seat, name: 'JoeTest', stack: 1000, socketId});
     }
 
     acceptSitRequest(sitRequest: SitRequest) {
