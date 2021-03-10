@@ -4,6 +4,7 @@ import {Modal} from './Modal';
 import {Frame, Row, Column} from './Container.js';
 import {StateObserver, Client, GameState} from '../client';
 import {Player} from '../../server'; // TODO: EWWWW. Should be seperate. Or at least in an "intermediary" file
+import {PlayerActionControls} from './PlayerAction';
 
 export enum SeatStatus {
     OPEN,
@@ -142,7 +143,7 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
     private playerInfo: PlayerInfo;
     private sitButton: Button;
     private playerCards: CardHolder; // TODO: Change name of CardHolder... don't like it.
-    private nextTurnButton: TextButton;
+    private playerActionControls: PlayerActionControls;
     private reservedText: Phaser.GameObjects.Text;
 
     constructor(scene: Phaser.Scene, x: number, y: number, seatStatus: SeatStatus, client: Client) {
@@ -158,9 +159,9 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
         this.sitButton = new Button(this.scene, this.x, this.y, 'testButton', 'testButtonHover', 'testButtonClick', () => this.onSit());
         this.reservedText = this.scene.add.text(this.x, this.y, 'Pending');
         this.playerCards = new CardHolder(this.scene, this.x, this.y);
-        this.nextTurnButton = new TextButton(this.scene, 350, 350, 'Next Turn', () => this.client.endTurn()); // TEMPORARY... for testing
-        this.nextTurnButton.visible = false;
-        this.nextTurnButton.active = false;
+        this.playerActionControls = new PlayerActionControls(this.scene, client);
+        this.playerActionControls.visible = false;
+        this.playerActionControls.active = false;
 
         this.setStatus(seatStatus);
         this.client.addObserver(this);
@@ -214,12 +215,12 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
             this.playerCards.setHand(player.hand);
             this.setStatus(SeatStatus.PLAYING);
             if (isMyTurn) {
-                this.nextTurnButton.visible = true;
-                this.nextTurnButton.active = true;
+                this.playerActionControls.visible = true;
+                this.playerActionControls.active = true;
             }
             else {
-                this.nextTurnButton.visible = false;
-                this.nextTurnButton.active = false;
+                this.playerActionControls.visible = false;
+                this.playerActionControls.active = false;
             }
         }
         else if (isSeatRequested) {

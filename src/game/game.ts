@@ -5,6 +5,7 @@ import {TextButton} from './ui/TextButton.js';
 import {Seat, SeatStatus} from './ui/Seat';
 import {Modal} from './ui/Modal';
 import {Frame, Row, Column} from './ui/Container.js';
+import {Board} from './ui/Board';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
     active: true,
@@ -22,6 +23,7 @@ class PokerGame extends Phaser.Scene {
     coordinateBase: Coordinates;
     client: Client;
     seats: Seat[];
+    board: Board;
     playerManagementModal: PlayerManagementModal;
     playerManagementButton: TextButton;
     startPlayingButton: TextButton;
@@ -62,6 +64,8 @@ class PokerGame extends Phaser.Scene {
             const [x, y] = this.coordinateBase.seatCoordinates(i);
             this.seats.push(new Seat(this.scene.scene, x, y, SeatStatus.OPEN, this.client));
         }
+
+        this.board = new Board(this.scene.scene, this.client);
 
         this.playerManagementModal = new PlayerManagementModal(this.scene.scene, this.client);
         this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => this.playerManagementModal.show());

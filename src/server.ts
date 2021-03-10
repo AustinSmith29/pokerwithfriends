@@ -11,12 +11,16 @@ export interface Player {
     hand?: Card[];
 }
 
-
 export interface SitRequest {
     name: string;
     seat: number;
     stack: number;
     socketId: string;
+}
+
+export interface EndTurnMessage {
+    action: string;
+    amount?: number;
 }
 
 type GameStatus = 
@@ -28,6 +32,7 @@ type GameStatus =
     'RIVER'   |
     'SHOWDOWN';
 
+// TODO: Write function that takes subset of these fields and sends them to clients
 interface PokerGameState {
     players: Player[];
     deck: Card[];
@@ -39,6 +44,7 @@ interface PokerGameState {
     lobby: SocketIO.Socket[];
     dealerPosition: number;
     whoseTurn?: Player;
+    numTurnsCompleted: number;
 }
 
 interface PokerGameI {
@@ -67,7 +73,8 @@ export class PokerGame implements PokerGameI {
             status: 'WAITING',
             lobby: [],
             dealerPosition: 0,
-            whoseTurn: undefined
+            whoseTurn: undefined,
+            numTurnsCompleted: 0
         };
         this.host = undefined;
         this.password = password;
@@ -103,11 +110,11 @@ export class PokerGame implements PokerGameI {
         } else {
             this.bindHost(socket.id);
         }
-        game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
+        game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], board: [...state.board]});
 
         socket.on('SIT_REQUEST', function (request: SitRequest) {
             game.addSitRequest(request);
-            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
+            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], board: [...state.board]});
         });
 
         socket.on('SIT_ACCEPT', function(request: SitRequest) {
@@ -125,7 +132,7 @@ export class PokerGame implements PokerGameI {
                 state.players.push(player);
                 state.sitRequests = existingRequests.filter((req: SitRequest) => 
                     req.socketId !== request.socketId);
-                game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests]});
+                game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], board: [...state.board]});
             }
         });
 
@@ -134,35 +141,70 @@ export class PokerGame implements PokerGameI {
             // everyone else's hand. Eventually I want to make a special "debug mode"
             // option that will enable this.
             console.log('Dealing Hand');
-            if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
-                state.status = 'DEAL';
+            //if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
+                state.status = 'PREFLOP';
                 game.shuffleDeck();
                 for (const player of state.players) {
                     const hand = [game.state.deck.pop(), game.state.deck.pop()];
-                    const socketId = player.socketId;
                     player.hand = hand;
                 }
-            }
-            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], whoseTurn: state.whoseTurn});
+            //}
+            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], whoseTurn: state.whoseTurn, board: [...state.board]});
 
             // find out whose turn it is then send TURN_START message to that player
             //game.io.sockets.connected[socketId].emit('TURN_START', {});
         });
 
-        socket.on('TURN_END', function() {
-            // verify message is coming from socket of player whose turn it is
+        socket.on('TURN_END', function(message: EndTurnMessage) {
+            //TODO: verify message is coming from socket of player whose turn it is
+            //TODO: This code SCREAMS for state machine
             const activePlayer = state.whoseTurn;
-            if (activePlayer.socketId === socket.id) {
-                const nextPlayer = game._getNextActivePlayer();
-                state.whoseTurn = nextPlayer;
-                game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], whoseTurn: nextPlayer});
-                // update state
-                // tablesync
-                // if more players to act
-                //      send next player TURN_START message
-                // else
-                //      advance to next round
+            const nextPlayer = game._getNextActivePlayer();
+            const numPlayersInHand = state.players.filter((player: Player) => player.hand && player.hand.length > 0).length;
+            state.whoseTurn = nextPlayer;
+            state.numTurnsCompleted++;
+            if (message.action == 'check') {
+                console.log(`${activePlayer.name} checks.`);
             }
+            else if (message.action == 'fold') {
+                console.log(`${activePlayer.name} folds.`);
+            }
+            else if (message.action == 'call') {
+                console.log(`${activePlayer.name} calls.`);
+            }
+
+            if (state.numTurnsCompleted == numPlayersInHand) {
+                state.numTurnsCompleted = 0;
+                console.log('Round completed.');
+                if (state.status === 'PREFLOP') {
+                    state.status = 'FLOP';
+                    state.board = [state.deck.pop(), state.deck.pop(), state.deck.pop()];
+                    console.log(`Flop: ${state.board}`);
+                }
+                else if (state.status === 'FLOP') {
+                    state.status = 'TURN';
+                    state.board.push(state.deck.pop());
+                    console.log(`Turn: ${state.board}`);
+                }
+                else if (state.status === 'TURN') {
+                    state.status = 'RIVER';
+                    state.board.push(state.deck.pop());
+                    console.log(`River: ${state.board}`);
+                }
+                else if (state.status === 'RIVER') {
+                    state.status = 'SHOWDOWN';
+                }
+                else if (state.status === 'SHOWDOWN') {
+                    state.board = [];
+                    state.status = 'PREFLOP';
+                    game.shuffleDeck();
+                    for (const player of state.players) {
+                        const hand = [game.state.deck.pop(), game.state.deck.pop()];
+                        player.hand = hand;
+                    }
+                }
+            }
+            game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], whoseTurn: nextPlayer, board: [...state.board]});
         });
     }
 

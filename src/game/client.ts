@@ -7,6 +7,7 @@ export interface GameState {
     sitRequests: SitRequest[];
     localPlayerId: string;
     whoseTurn?: Player;
+    board: {rank: number, suit: number}[];
 }
 
 export interface StateObserver {
@@ -17,6 +18,11 @@ export interface StateSubject {
     addObserver: (observer: StateObserver) => void;
     removeObserver: (observer: StateObserver) => void;
     notify: (state: GameState) => void;
+}
+
+export interface EndTurnMessage {
+    action: string;
+    amount?: number;
 }
 
 export class Client implements StateSubject {
@@ -35,7 +41,8 @@ export class Client implements StateSubject {
         this.localState = {
             players: [],
             sitRequests: [],
-            localPlayerId: undefined
+            localPlayerId: undefined,
+            board: []
         };
 
         this.stateObservers = [];
@@ -46,7 +53,7 @@ export class Client implements StateSubject {
         const client = this;
         socket.on('TABLESYNC', (serverState) => {
             // Merge server and client state
-            client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players, whoseTurn: serverState?.whoseTurn};
+            client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players, whoseTurn: serverState?.whoseTurn, board: serverState?.board};
             client.notify(client.localState);
         });
     }
@@ -63,8 +70,8 @@ export class Client implements StateSubject {
         this.stateObservers.forEach(observer => observer.onNotify(state));
     }
 
-    endTurn() {
-        this.socket.emit('TURN_END');
+    endTurn(data: EndTurnMessage) {
+        this.socket.emit('TURN_END', data);
     }
 
     sit(seat: number) {
