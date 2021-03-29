@@ -10,25 +10,47 @@ export interface GameState {
     board: {rank: number, suit: number}[];
 }
 
-export interface StateObserver {
-    onNotify: (state: GameState) => void;
+export interface Observer<T> {
+    onNotify: (thing: T) => void;
 }
 
+export interface Subject<T, Obs extends Observer<T>> {
+    addObserver: (observer: Obs) => void;
+    removeObserver: (observer: Obs) => void;
+    notify: (thing: T) => void;
+}
+
+export enum EventType {
+    TableSync,
+    Chat
+};
+
+interface EventI<T extends EventType, D> {
+    type: T;
+    data: D;
+}
+
+export type Event = EventI<EventType.TableSync, GameState> | EventI<EventType.Chat, string>;
+
+export type EventObserver = Observer<Event>;
+export type EventSubject = Subject<Event, EventObserver>;
+/*
 export interface StateSubject {
     addObserver: (observer: StateObserver) => void;
     removeObserver: (observer: StateObserver) => void;
     notify: (state: GameState) => void;
 }
+ */
 
 export interface EndTurnMessage {
     action: string;
     amount?: number;
 }
 
-export class Client implements StateSubject {
+export class Client implements EventSubject {
     private roomName: string;
     private localState: GameState;
-    private stateObservers: StateObserver[];
+    private eventObservers: EventObserver[];
     readonly socket: SocketIO.Socket;
 
     constructor(roomName: string) {
@@ -45,7 +67,7 @@ export class Client implements StateSubject {
             board: []
         };
 
-        this.stateObservers = [];
+        this.eventObservers = [];
     }
 
     _bindClientEvents() {
@@ -54,20 +76,29 @@ export class Client implements StateSubject {
         socket.on('TABLESYNC', (serverState) => {
             // Merge server and client state
             client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players, whoseTurn: serverState?.whoseTurn, board: serverState?.board};
-            client.notify(client.localState);
+            client.notify({type: EventType.TableSync, data: client.localState});
+        });
+
+        socket.on('CHAT', (message) => {
+            client.notify({type: EventType.Chat, data: message});
         });
     }
 
-    addObserver(observer: StateObserver) {
-        this.stateObservers.push(observer);
+
+    addObserver(observer: EventObserver) {
+        this.eventObservers.push(observer);
     }
 
-    removeObserver(observer: StateObserver) {
-        this.stateObservers = this.stateObservers.filter(obs => obs !== observer)
+    removeObserver(observer: EventObserver) {
+        this.eventObservers = this.eventObservers.filter(obs => obs !== observer)
     }
 
-    notify(state: GameState) {
-        this.stateObservers.forEach(observer => observer.onNotify(state));
+    notify(event: Event) {
+        this.eventObservers.forEach(observer => observer.onNotify(event));
+    }
+
+    sendChat(message: string) {
+        this.socket.emit('CHAT', message);
     }
 
     endTurn(data: EndTurnMessage) {

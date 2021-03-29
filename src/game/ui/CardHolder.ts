@@ -1,11 +1,11 @@
-import {StateObserver, Client, GameState} from '../client';
+import {EventObserver, EventType, Event, Client, GameState} from '../client';
 
 interface Card {
     rank: number;
     suit: number;
 }
 
-export class CardHolder extends Phaser.GameObjects.Container implements StateObserver {
+export class CardHolder extends Phaser.GameObjects.Container implements EventObserver {
     private static ID_COUNTER = 0;
 
     private card1_image: Phaser.GameObjects.Image | null;
@@ -26,10 +26,12 @@ export class CardHolder extends Phaser.GameObjects.Container implements StateObs
         this.client.addObserver(this);
     } 
 
-    onNotify(state: GameState) {
-        const player = state.players.find(player => player.seat === this.id);
-        if (player && player.status === 'PLAYING') {
-            this.setHand(player.hand);
+    onNotify(event: Event) {
+        if (event.type === EventType.TableSync) {
+            const player = event.data.players.find(player => player.seat === this.id);
+            if (player && player.status === 'PLAYING') {
+                this.setHand(player.hand);
+            }
         }
     }
 

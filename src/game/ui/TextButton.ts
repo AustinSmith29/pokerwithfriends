@@ -1,6 +1,7 @@
 export class TextButton extends Phaser.GameObjects.Text {
-    constructor(scene, x, y, text, onClick) {
-        super(scene, x, y, text);
+    private onClick: () => void;
+    constructor(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, style?: object) {
+        super(scene, x, y, text, style);
         scene.add.existing(this);
         
         this.onClick = onClick;

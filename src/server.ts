@@ -112,6 +112,10 @@ export class PokerGame implements PokerGameI {
         }
         game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], board: [...state.board]});
 
+        socket.on('CHAT', function (message: string) {
+            game.io.in(game.roomName).emit('CHAT', message);
+        });
+
         socket.on('SIT_REQUEST', function (request: SitRequest) {
             game.addSitRequest(request);
             game.io.in(game.roomName).emit('TABLESYNC', {players: [...state.players], sitRequests: [...state.sitRequests], board: [...state.board]});
@@ -141,6 +145,7 @@ export class PokerGame implements PokerGameI {
             // everyone else's hand. Eventually I want to make a special "debug mode"
             // option that will enable this.
             console.log('Dealing Hand');
+            game.io.in(game.roomName).emit('CHAT', `New hand is dealt.`);
             //if (state.status === 'WAITING' || state.status === 'SHOWDOWN') {
                 state.status = 'PREFLOP';
                 game.shuffleDeck();
@@ -165,12 +170,15 @@ export class PokerGame implements PokerGameI {
             state.numTurnsCompleted++;
             if (message.action == 'check') {
                 console.log(`${activePlayer.name} checks.`);
+                game.io.in(game.roomName).emit('CHAT', `${activePlayer.name} checks.`);
             }
             else if (message.action == 'fold') {
                 console.log(`${activePlayer.name} folds.`);
+                game.io.in(game.roomName).emit('CHAT', `${activePlayer.name} folds.`);
             }
             else if (message.action == 'call') {
                 console.log(`${activePlayer.name} calls.`);
+                game.io.in(game.roomName).emit('CHAT', `${activePlayer.name} calls.`);
             }
 
             if (state.numTurnsCompleted == numPlayersInHand) {
@@ -180,16 +188,19 @@ export class PokerGame implements PokerGameI {
                     state.status = 'FLOP';
                     state.board = [state.deck.pop(), state.deck.pop(), state.deck.pop()];
                     console.log(`Flop: ${state.board}`);
+                    game.io.in(game.roomName).emit('CHAT', `Dealer deals the flop.`);
                 }
                 else if (state.status === 'FLOP') {
                     state.status = 'TURN';
                     state.board.push(state.deck.pop());
                     console.log(`Turn: ${state.board}`);
+                    game.io.in(game.roomName).emit('CHAT', `Dealer deals the turn.`);
                 }
                 else if (state.status === 'TURN') {
                     state.status = 'RIVER';
                     state.board.push(state.deck.pop());
                     console.log(`River: ${state.board}`);
+                    game.io.in(game.roomName).emit('CHAT', `Dealer deals the river.`);
                 }
                 else if (state.status === 'RIVER') {
                     state.status = 'SHOWDOWN';

@@ -1,11 +1,12 @@
 import * as Phaser from 'phaser';
 import {Client, GameState} from './client';
 import {PlayerManagementModal} from './ui/PlayerManagementModal';
-import {TextButton} from './ui/TextButton.js';
+import {TextButton} from './ui/TextButton';
 import {Seat, SeatStatus} from './ui/Seat';
 import {Modal} from './ui/Modal';
 import {Frame, Row, Column} from './ui/Container.js';
 import {Board} from './ui/Board';
+import {ChatBox} from './ui/ChatBox';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
     active: true,
@@ -24,6 +25,7 @@ class PokerGame extends Phaser.Scene {
     client: Client;
     seats: Seat[];
     board: Board;
+    chatBox: ChatBox;
     playerManagementModal: PlayerManagementModal;
     playerManagementButton: TextButton;
     startPlayingButton: TextButton;
@@ -66,6 +68,7 @@ class PokerGame extends Phaser.Scene {
         }
 
         this.board = new Board(this.scene.scene, this.client);
+        this.chatBox = new ChatBox(this.scene.scene, this.client);
 
         this.playerManagementModal = new PlayerManagementModal(this.scene.scene, this.client);
         this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => this.playerManagementModal.show());
@@ -128,7 +131,7 @@ const config: Phaser.Types.Core.GameConfig = {
     scale: {
         parent: 'game',
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         //        width: window.innerWidth, 
         //height: window.innerHeight
     }, 

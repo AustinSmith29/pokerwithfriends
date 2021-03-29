@@ -1,8 +1,8 @@
 import {Button} from './button.js';
-import {TextButton} from './TextButton.js';
+import {TextButton} from './TextButton';
 import {Modal} from './Modal';
 import {Frame, Row, Column} from './Container.js';
-import {StateObserver, Client, GameState} from '../client';
+import {EventObserver, Event, EventType, Client} from '../client';
 import {Player} from '../../server'; // TODO: EWWWW. Should be seperate. Or at least in an "intermediary" file
 import {PlayerActionControls} from './PlayerAction';
 
@@ -132,7 +132,7 @@ class PlayerInfo {
     }
 }
 
-export class Seat extends Phaser.GameObjects.GameObject implements StateObserver {
+export class Seat extends Phaser.GameObjects.GameObject implements EventObserver {
     private static ID_COUNTER = 0;
 
     private x: number;
@@ -205,29 +205,32 @@ export class Seat extends Phaser.GameObjects.GameObject implements StateObserver
         }
     }
 
-    onNotify(state: GameState) {
-        const isSeatTaken = state.players.map(player => player.seat).includes(this.id);
-        const isSeatRequested = state.sitRequests.map(request => request.seat).includes(this.id);
-        const isMyTurn = (this.client.socket.id === state.whoseTurn?.socketId);
-        if (isSeatTaken) {
-            const player = state.players.find(player => player.seat === this.id);
-            this.playerInfo.display(player);
-            this.playerCards.setHand(player.hand);
-            this.setStatus(SeatStatus.PLAYING);
-            if (isMyTurn) {
-                this.playerActionControls.visible = true;
-                this.playerActionControls.active = true;
+    onNotify(event: Event) {
+        if (event.type === EventType.TableSync) {
+            const state = event.data;
+            const isSeatTaken = state.players.map(player => player.seat).includes(this.id);
+            const isSeatRequested = state.sitRequests.map(request => request.seat).includes(this.id);
+            const isMyTurn = (this.client.socket.id === state.whoseTurn?.socketId);
+            if (isSeatTaken) {
+                const player = state.players.find(player => player.seat === this.id);
+                this.playerInfo.display(player);
+                this.playerCards.setHand(player.hand);
+                this.setStatus(SeatStatus.PLAYING);
+                if (isMyTurn) {
+                    this.playerActionControls.visible = true;
+                    this.playerActionControls.active = true;
+                }
+                else {
+                    this.playerActionControls.visible = false;
+                    this.playerActionControls.active = false;
+                }
+            }
+            else if (isSeatRequested) {
+                this.setStatus(SeatStatus.RESERVED);
             }
             else {
-                this.playerActionControls.visible = false;
-                this.playerActionControls.active = false;
+                this.setStatus(SeatStatus.OPEN);
             }
-        }
-        else if (isSeatRequested) {
-            this.setStatus(SeatStatus.RESERVED);
-        }
-        else {
-            this.setStatus(SeatStatus.OPEN);
         }
     }
 }

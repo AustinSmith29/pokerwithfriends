@@ -1,4 +1,4 @@
-import {TextButton} from './TextButton.js';
+import {TextButton} from './TextButton';
 import {Client} from '../client';
 
 export class PlayerActionControls {

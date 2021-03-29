@@ -1,11 +1,11 @@
 import {Modal} from './Modal';
 import {Frame, Row, Column} from './Container.js';
-import {TextButton} from './TextButton.js';
-import {StateObserver, Client, GameState} from '../client';
+import {TextButton} from './TextButton';
+import {EventObserver, EventType, Event, Client, GameState} from '../client';
 
 const RENDER_DEPTH = 1000;
 
-export class PlayerManagementModal extends Modal implements StateObserver{
+export class PlayerManagementModal extends Modal implements EventObserver{
     private client: Client;
     private rootFrame: Frame;
 
@@ -29,9 +29,11 @@ export class PlayerManagementModal extends Modal implements StateObserver{
         this.visible = false;
     }
 
-    onNotify(state: GameState) {
-        this.rootFrame.clear();
-        this._buildPlayerRows(state);
+    onNotify(event: Event) {
+        if (event.type === EventType.TableSync) {
+            this.rootFrame.clear();
+            this._buildPlayerRows(event.data);
+        }
     }
 
     _buildPlayerRows(state: GameState) {
