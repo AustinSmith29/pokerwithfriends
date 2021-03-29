@@ -1,6 +1,6 @@
 import {Modal} from './Modal';
 import {EventObserver, Event, EventType, Client} from '../client';
-import { TextBoxInput } from './primitives/TextBox';
+import { TextBoxInput } from './primitives/TextBoxInput';
 
 const TEST_STRING = 'Austin: Hello my name is Austin Smith. Are you guys ready to play some poker? I know I am. Boy oh boy am I excited. I just checked, and I am actually rock hard. Anyone else?';
 export class ChatBox extends Modal implements EventObserver {
