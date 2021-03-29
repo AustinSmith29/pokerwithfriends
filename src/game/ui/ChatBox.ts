@@ -1,6 +1,6 @@
 import {Modal} from './Modal';
 import {EventObserver, Event, EventType, Client} from '../client';
-import { TextBox } from './primitives/TextBox';
+import { TextBoxInput } from './primitives/TextBox';
 
 const TEST_STRING = 'Austin: Hello my name is Austin Smith. Are you guys ready to play some poker? I know I am. Boy oh boy am I excited. I just checked, and I am actually rock hard. Anyone else?';
 export class ChatBox extends Modal implements EventObserver {
@@ -14,7 +14,7 @@ export class ChatBox extends Modal implements EventObserver {
     private chatBoxX: number;
     private chatBoxY: number;
     mask: Phaser.Display.Masks.GeometryMask;
-    textBox: TextBox;
+    textBox: TextBoxInput;
 
     constructor(scene: Phaser.Scene, client: Client) {
         super(scene, 20, 750, ChatBox.WIDTH, ChatBox.HEIGHT);
@@ -28,7 +28,7 @@ export class ChatBox extends Modal implements EventObserver {
         this.textObject.setMask(this.mask);
         this.chatBoxX = 20;
         this.chatBoxY = 750;
-        this.textBox = new TextBox(scene, 20, 910, (message: string) => this.client.sendChat(message));
+        this.textBox = new TextBoxInput(scene, 20, 910, (message: string) => this.client.sendChat(message));
         
         this.addMessage('Jim: Yo dude wtf is wrong with you bruh? Get tf outta here');
     }
