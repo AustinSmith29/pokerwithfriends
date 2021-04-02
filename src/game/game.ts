@@ -7,6 +7,7 @@ import {Modal} from './ui/Modal';
 import {Frame, Row, Column} from './ui/Container.js';
 import {Board} from './ui/Board';
 import {ChatBox} from './ui/ChatBox';
+import {SliderInput} from './ui/primitives/SliderInput';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
     active: true,
@@ -73,6 +74,8 @@ class PokerGame extends Phaser.Scene {
         this.playerManagementModal = new PlayerManagementModal(this.scene.scene, this.client);
         this.playerManagementButton = new TextButton(this.scene.scene, 20, 20, 'Players', () => this.playerManagementModal.show());
         this.startPlayingButton = new TextButton(this.scene.scene, 20, 80, 'Start Game', () => this.client.startGame());
+
+        const slider = new SliderInput(this.scene.scene, 600, 300, 300, 80);
     }
 
     update() {
