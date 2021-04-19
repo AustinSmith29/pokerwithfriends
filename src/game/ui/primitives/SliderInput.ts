@@ -6,9 +6,11 @@ export class SliderInput extends Phaser.GameObjects.GameObject {
     minValue: number = 0;
     maxValue: number = 100;
     _value: number = 0;
+    _visible: boolean = true;
 
     x: number;
     y: number;
+    private normalizedValue: number;
     private width: number;
     private height: number;
     private sliderX: number;
@@ -16,7 +18,8 @@ export class SliderInput extends Phaser.GameObjects.GameObject {
     private bar: Phaser.GameObjects.Graphics;
     private slider: Phaser.GameObjects.Graphics;
     private sliderZone: Phaser.GameObjects.Zone;
-    constructor(scene: Phaser.Scene, x: number, y: number, width: number, height: number) {
+    private onUpdate: (value: number) => void;
+    constructor(scene: Phaser.Scene, x: number, y: number, width: number, height: number, onUpdate: (value: number) => void) {
         super(scene, 'SliderInput');
         scene.add.existing(this);
 
@@ -24,6 +27,7 @@ export class SliderInput extends Phaser.GameObjects.GameObject {
         this.y = y;
         this.width = width;
         this.height = height;
+        this.onUpdate = onUpdate;
         const minX = this.x;
         const maxX = this.x + width;
         const sliderX = this.x;
@@ -42,6 +46,7 @@ export class SliderInput extends Phaser.GameObjects.GameObject {
         this.sliderZone = scene.add.zone(sliderX - 10, sliderY -10, 60, height + 20);
         this.sliderZone.setInteractive({useHandCursor: true});
         scene.input.setDraggable(this.sliderZone);
+        const sliderRef = this;
         scene.input.on('drag', function (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Zone, dragX: number, dragY: number) {
             gameObject.x = dragX;
             gameObject.y = dragY;
@@ -52,6 +57,14 @@ export class SliderInput extends Phaser.GameObjects.GameObject {
             if (slider.x > maxX) {
                 slider.x = maxX;
             }
+            // Calculate updated slider value
+            const normalizedValue = (slider.x - minX) / (maxX - minX);
+            let realValue = normalizedValue * sliderRef.maxValue;
+            if (realValue < sliderRef.minValue) {
+                realValue = sliderRef.minValue;
+            }
+            sliderRef.value = realValue;
+            sliderRef.onUpdate(realValue);
         });
     }
 
@@ -61,5 +74,28 @@ export class SliderInput extends Phaser.GameObjects.GameObject {
 
     set value(val: number) {
         this._value = val;
+    }
+
+    get visible() {
+        return this._visible;
+    }
+
+    set visible(val: boolean) {
+        this.slider.visible = val;
+        this.bar.visible = val;
+        this._visible = val;
+    }
+
+    _calculateValueFromSliderPosition() {
+        const normalizedValue = (this.slider.x - this.x) / (this.x + this.width - this.x);
+        let realValue = normalizedValue * this.maxValue;
+        if (realValue < this.minValue) {
+            realValue = this.minValue;
+        }
+        this._value = realValue;
+    }
+
+    _calculateSliderPositionFromValue(value: number) {
+        const normaliedValue = (value < this.minValue) ? this.minValue : (value - this.minValue / (this.maxValue)); // ???
     }
 }

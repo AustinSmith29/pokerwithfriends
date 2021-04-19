@@ -1,13 +1,15 @@
 import {TextButton} from './TextButton';
+import {SliderInput} from './primitives/SliderInput';
 import {Client} from '../client';
 
 export class PlayerActionControls {
-    private uiControls: {[name: string]: TextButton};
+    private uiControls: {[name: string]: TextButton | SliderInput };
     private checkButton: TextButton;
     private foldButton: TextButton;
     private callButton: TextButton;
     private betButton: TextButton;
     private raiseButton: TextButton;
+    private betSlider: SliderInput;
     private client: Client;
     private _visible: boolean;
     private _active: boolean;
@@ -19,9 +21,13 @@ export class PlayerActionControls {
             'fold':  new TextButton(scene, 580, 720, 'Fold', () => client.endTurn({'action': 'fold'})),
             'call':  new TextButton(scene, 650, 720, 'Call', () => client.endTurn({'action': 'call'})),
             'bet':   new TextButton(scene, 740, 720, 'Bet', () => this.doBet()),
-            'raise': new TextButton(scene, 790, 720, 'Raise', () => this.doRaise())
+            'raise': new TextButton(scene, 790, 720, 'Raise', () => this.doRaise()),
+            'betSlider': new SliderInput(scene, 500, 650, 200, 75, () => this.setBet())
         };
+        this.visible = false;
+    }
 
+    setBet() {
     }
 
     doBet() {
