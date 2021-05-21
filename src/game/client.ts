@@ -8,6 +8,7 @@ export interface GameState {
     localPlayerId: string;
     whoseTurn?: Player;
     board: {rank: number, suit: number}[];
+    dealerPosition: number;
 }
 
 export interface Observer<T> {
@@ -64,7 +65,8 @@ export class Client implements EventSubject {
             players: [],
             sitRequests: [],
             localPlayerId: undefined,
-            board: []
+            board: [],
+            dealerPosition: 0,
         };
 
         this.eventObservers = [];
@@ -75,7 +77,14 @@ export class Client implements EventSubject {
         const client = this;
         socket.on('TABLESYNC', (serverState) => {
             // Merge server and client state
-            client.localState = {...client.localState, sitRequests: serverState.sitRequests, players: serverState.players, whoseTurn: serverState?.whoseTurn, board: serverState?.board};
+            client.localState = {
+                ...client.localState,
+                sitRequests: serverState.sitRequests, 
+                players: serverState.players, 
+                whoseTurn: serverState?.whoseTurn, 
+                board: serverState?.board,
+                dealerPosition: serverState?.dealerPosition,
+            };
             client.notify({type: EventType.TableSync, data: client.localState});
         });
 

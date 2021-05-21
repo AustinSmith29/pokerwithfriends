@@ -13,6 +13,7 @@ export class PlayerActionControls {
     private client: Client;
     private _visible: boolean;
     private _active: boolean;
+    private wagerAmount: number;
 
     constructor(scene: Phaser.Scene, client: Client) {
         this.client = client;
@@ -22,17 +23,18 @@ export class PlayerActionControls {
             'call':  new TextButton(scene, 650, 720, 'Call', () => client.endTurn({'action': 'call'})),
             'bet':   new TextButton(scene, 740, 720, 'Bet', () => this.doBet()),
             'raise': new TextButton(scene, 790, 720, 'Raise', () => this.doRaise()),
-            'betSlider': new SliderInput(scene, 500, 650, 200, 75, () => this.setBet())
+            'betSlider': new SliderInput(scene, 500, 650, 200, 75, (val: number) => this.setBet(val))
         };
         this.visible = false;
+        this.wagerAmount = 0;
     }
 
-    setBet() {
+    setBet(val: number) {
+        this.wagerAmount = val;
     }
 
     doBet() {
-        const amount = 50; // TODO: Get value from textbox or betting slider
-        this.client.endTurn({'action': 'bet', amount});
+        this.client.endTurn({'action': 'bet', 'amount': this.wagerAmount});
     }
 
     doRaise() {

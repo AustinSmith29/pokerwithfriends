@@ -39,11 +39,9 @@ class PokerGame extends Phaser.Scene {
     }
 
     preload() {
-        //this.background = this.load.image('background', 'assets/pokerBackground.png');
+        this.load.image('background', 'assets/pokerBackground.png');
         this.load.image('table', 'assets/pokertable.png');
-        this.load.image('testButton', 'assets/testButton.png');
-        this.load.image('testButtonHover', 'assets/testButtonHover.png');
-        this.load.image('testButtonClick', 'assets/testButtonClick.png');
+        this.load.image('dealer_chip', 'assets/dealerchip.png');
         this.load.image('card_back', 'assets/cards/card_back.svg');
         const suits = ['clubs', 'hearts', 'spades', 'diamonds'];
         const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
@@ -59,9 +57,7 @@ class PokerGame extends Phaser.Scene {
         const roomName = new URLSearchParams(location.search).get('roomName');
         this.client = new Client(roomName);
 
-        //this.add.image(this.origin[0], this.origin[1], 'table');
-        //let card = this.add.image(400, 400, 'ace_spades');
-        //card.setScale(0.40);
+        this.add.image(this.origin[0], this.origin[1], 'table');
         for (let i = 0; i < 9; i++) {
             const [x, y] = this.coordinateBase.seatCoordinates(i);
             this.seats.push(new Seat(this.scene.scene, x, y, SeatStatus.OPEN, this.client));

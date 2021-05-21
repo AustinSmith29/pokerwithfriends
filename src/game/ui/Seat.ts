@@ -141,10 +141,11 @@ export class Seat extends Phaser.GameObjects.GameObject implements EventObserver
     private client: Client;
     private seatStatus: SeatStatus;
     private playerInfo: PlayerInfo;
-    private sitButton: Button;
+    private sitButton: TextButton;
     private playerCards: CardHolder; // TODO: Change name of CardHolder... don't like it.
     private playerActionControls: PlayerActionControls;
     private reservedText: Phaser.GameObjects.Text;
+    private dealerChip: Phaser.GameObjects.Image;
 
     constructor(scene: Phaser.Scene, x: number, y: number, seatStatus: SeatStatus, client: Client) {
         super(scene, 'seat');
@@ -156,12 +157,13 @@ export class Seat extends Phaser.GameObjects.GameObject implements EventObserver
         this.client = client;
 
         this.playerInfo = new PlayerInfo(this.scene, this.x, this.y);
-        this.sitButton = new Button(this.scene, this.x, this.y, 'testButton', 'testButtonHover', 'testButtonClick', () => this.onSit());
+        this.sitButton = new TextButton(this.scene, this.x, this.y, 'Sit', () => this.onSit());
         this.reservedText = this.scene.add.text(this.x, this.y, 'Pending');
         this.playerCards = new CardHolder(this.scene, this.x, this.y);
         this.playerActionControls = new PlayerActionControls(this.scene, client);
         this.playerActionControls.visible = false;
         this.playerActionControls.active = false;
+        this.dealerChip = new Phaser.GameObjects.Image(this.scene, x-100, y-200, 'dealer_chip');
 
         this.setStatus(seatStatus);
         this.client.addObserver(this);
@@ -211,6 +213,7 @@ export class Seat extends Phaser.GameObjects.GameObject implements EventObserver
             const isSeatTaken = state.players.map(player => player.seat).includes(this.id);
             const isSeatRequested = state.sitRequests.map(request => request.seat).includes(this.id);
             const isMyTurn = (this.client.socket.id === state.whoseTurn?.socketId);
+            const isDealer = (state.dealerPosition === this.id);
             if (isSeatTaken) {
                 const player = state.players.find(player => player.seat === this.id);
                 this.playerInfo.display(player);
@@ -223,6 +226,13 @@ export class Seat extends Phaser.GameObjects.GameObject implements EventObserver
                 else {
                     this.playerActionControls.visible = false;
                     this.playerActionControls.active = false;
+                }
+
+                if (isDealer) {
+                    this.dealerChip.visible = true;
+                }
+                else {
+                    this.dealerChip.visible = false;
                 }
             }
             else if (isSeatRequested) {

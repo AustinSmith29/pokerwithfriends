@@ -5,6 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "phaser": "^3.24.1",
+    "poker-evaluator": "^2.0.5",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
