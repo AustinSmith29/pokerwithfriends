@@ -1,7 +1,8 @@
-import {Modal} from './Modal';
-import {Frame, Row, Column} from './Container.js';
-import {TextButton} from './TextButton';
-import {EventObserver, EventType, Event, Client, GameState} from '../client';
+import { Modal } from './Modal';
+import { Frame, Row, Column } from './Container.js';
+import { TextButton } from './TextButton';
+import { EventObserver, EventType, Event, Client } from '../client';
+import { GameState } from '../../shared/interfaces';
 
 const RENDER_DEPTH = 1000;
 

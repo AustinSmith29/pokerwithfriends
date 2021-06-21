@@ -4,8 +4,10 @@
   "description": "An online peer to peer poker web application for private game hosting.",
   "main": "app.js",
   "dependencies": {
+    "@types/mocha": "^8.2.2",
+    "mocha": "^8.4.0",
     "phaser": "^3.24.1",
-    "poker-evaluator": "^2.0.5",
+    "poker-evaluator-ts": "^2.0.3",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
@@ -16,6 +18,7 @@
     "express": "^4.17.1",
     "nodemon": "^2.0.4",
     "ts-loader": "^8.0.3",
+    "ts-mocha": "^8.0.0",
     "typescript": "^4.0.2",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
@@ -26,7 +29,7 @@
     "prestart": "npm run build",
     "start": "nodemon src/index.ts",
     "dev-client": "webpack-dev-server",
-    "test": "mocha"
+    "test": "mocha src/**/*.test.ts --watch-extensions ts --require ts-node/register"
   },
   "author": "Austin Smith",
   "license": "ISC"

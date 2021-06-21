@@ -1,5 +1,5 @@
-import { PokerEvaluator } from 'poker-evaluator';
-import { ServerGameState, ServerPlayer } from './types';
+// import * as PokerEvaluator from 'poker-evaluator-ts';
+import { ServerGameState } from './types';
 import { SitRequest, Player } from '../shared/interfaces';
 
 /*
@@ -43,17 +43,10 @@ export class GameState {
         return newState;
     }
 
-    addSitRequest(request: SitRequest) {
-        return this.NewState({
-            ...this.state,
-            sitRequests: this.state.sitRequests.concat([request])
-        });
-    }
-
     acceptSitRequest(request: SitRequest): GameState {
         const matchingRequest = this.state.sitRequests.find(req => req.socketId === request.socketId);
         if (matchingRequest) {
-            const player: ServerPlayer = {
+            const player: Player = {
                 name: request.name,
                 stack: request.stack,
                 seat: request.seat,
@@ -61,28 +54,48 @@ export class GameState {
                 hand: [],
                 status: 'PLAYING'
             };
-            const sitRequests = this.state.sitRequests.filter(req => req === matchingRequest); 
+            const sitRequests = this.state.sitRequests.filter(req => req !== matchingRequest); 
             return this.NewState({ ...this.state, sitRequests }).seatPlayer(player);
         }
         return this;
     }
 
-    seatPlayer(player: ServerPlayer): GameState {
+    addSitRequest(request: SitRequest) {
+        return this.NewState({
+            ...this.state,
+            sitRequests: this.state.sitRequests.concat([request])
+        });
+    }
+
+    addPlayer(player: Player) {
+        return this.NewState({
+            ...this.state,
+            players: this.state.players.concat([player])
+        });
+    }
+
+    seatPlayer(player: Player): GameState {
         if (!getPlayerAtSeat(player.seat, this.state.players)) {
             return this.NewState({ ...this.state, players: this.state.players.concat([player]) });
         }
         return this;
     }
 
-    startNewHand(): GameState {
+    // In addition to normal poker game logic, this method will also be called by server 
+    // to initially set who the dealer, sb, and bb are at the start of the game (when
+    // dealer, sb, and bb are all undefined).
+    //
+    // dealerOverride is an optional parameter that explicity sets who the dealer is.
+    startNewHand(dealerOverride?: Player): GameState {
         const freshState = this.resetPlayerStatuses().resetPot();
-        const moveAndCollectBlinds = freshState.moveBlinds().collectBlinds();
+        const moveAndCollectBlinds = freshState.moveBlinds(dealerOverride).collectBlinds();
         const underTheGun = getPlayerAfter(moveAndCollectBlinds.state.bigBlind.who,
                                            moveAndCollectBlinds.state.players);
         return this.NewState({
             ...moveAndCollectBlinds.state,
             board: [],
-            deck: [], //TODO: Switch over to that poker solver shit
+            deck: createDeck(), 
+            bets: [{ player: this.state.bigBlind.who, amount: this.state.bigBlind.amount }],
             status: 'PREFLOP',
             whoseTurn: underTheGun,
             numTurnsCompleted: 0,
@@ -104,10 +117,11 @@ export class GameState {
         });
     }
 
-    moveBlinds(): GameState {
+    // dealerOverride is an optional parameter that explicity sets who the dealer is.
+    moveBlinds(dealerOverride?: Player): GameState {
         if (this.state.players.length < 2) return this;
 
-        const newDealer = getPlayerAfter(this.state.dealer, this.state.players);
+        const newDealer = (dealerOverride) ? dealerOverride : getPlayerAfter(this.state.dealer, this.state.players);
         const newSb = getPlayerAfter(newDealer, this.state.players);
         const newBb = getPlayerAfter(newSb, this.state.players);
         return this.NewState({
@@ -122,18 +136,17 @@ export class GameState {
         const sb = this.state.smallBlind;
         const bb = this.state.bigBlind;
         if (!sb.who || !bb.who) return this;
-        // Because blinds.who are type Player, and collectChipsFromPlayer expects type ServerPlayer (to allow
-        // access to his hand), we have to get a ServerPlayer via getPlayerAtSeat.
-        return this.collectChipsFromPlayer(getPlayerAtSeat(sb.who.seat, this.state.players), sb.amount)
-            .collectChipsFromPlayer(getPlayerAtSeat(bb.who.seat, this.state.players),  bb.amount);
+        return this.collectChipsFromPlayer(sb.who, sb.amount)
+            .collectChipsFromPlayer(bb.who, bb.amount);
     }
 
-    collectChipsFromPlayer(player: ServerPlayer, amount: number): GameState {
+    collectChipsFromPlayer(player: Player, amount: number): GameState {
         if (amount <= 0) return this;
-        const chips = (amount > player.stack) ? amount : player.stack;
+        const chips = (amount > player.stack) ? player.stack : amount;
         const pot = this.state.pots[this.state.pots.length-1];
         pot.amount += chips;
-        const pots = [...this.state.pots].splice(-1, 0, pot);
+        const pots = [...this.state.pots];
+        pots.splice(0, -1, pot);
         return this.NewState({ 
             ...this.state,
             pots,
@@ -188,13 +201,16 @@ export class GameState {
 
     showdown() {
         if (this.state.status !== 'RIVER') return this;
-        let winningPlayer: ServerPlayer = undefined;
+        let winningPlayer: Player = undefined;
     }
 
-    doCheck(player: ServerPlayer): GameState {
+    doCheck(player: Player): GameState {
         //TODO: Check if checking is valid action to player
+        console.log(player);
+        console.log(this.state.whoseTurn);
         if (this.state.whoseTurn !== player) return this;
 
+        console.log('here');
         return this.NewState({
             ...this.state,
             numTurnsCompleted: this.state.numTurnsCompleted + 1,
@@ -203,7 +219,7 @@ export class GameState {
         .advanceRoundIfOver();
     }
 
-    doFold(player: ServerPlayer): GameState {
+    doFold(player: Player): GameState {
         if (this.state.whoseTurn !== player) return this;
 
         return this.NewState({
@@ -217,7 +233,7 @@ export class GameState {
     }
 
     // Also handles raises since they are very similar
-    doBet(player: ServerPlayer, amount: number): GameState {
+    doBet(player: Player, amount: number): GameState {
         if (this.state.whoseTurn !== player) return this;
         if (amount < this.state.smallBlind.amount) return this;    
 
@@ -234,7 +250,7 @@ export class GameState {
         .advanceRoundIfOver();
     }
 
-    doCall(player: ServerPlayer): GameState {
+    doCall(player: Player): GameState {
         if (this.state.whoseTurn !== player) return this;
 
         const bets = this.state.bets;
@@ -261,9 +277,12 @@ export class GameState {
     }
 
     advanceRoundIfOver() {
+        console.log(`${this.state.numTurnsCompleted} ${this.state.numPlayersAtRoundStart}`);
         if (this.state.numTurnsCompleted !== this.state.numPlayersAtRoundStart) return this;
         switch (this.state.status) {
             case 'PREFLOP':
+                console.log('Deal flop');
+                console.log('Deal flop');
                 return this.dealFlop();
             case 'FLOP':
                 return this.dealTurn();
@@ -276,7 +295,7 @@ export class GameState {
 }
 
 // Updates the player in players by running function and returns new list of players with updated state.
-function updatePlayerInList(player: ServerPlayer, fn: (player: ServerPlayer) => void, players: ServerPlayer[]): ServerPlayer[] {
+function updatePlayerInList(player: Player, fn: (player: Player) => void, players: Player[]): Player[] {
     // TODO: I strongly suspect there may be weird reference issues with this... figure out how/if I need to solve it
     const copy = [...players];
     const who = copy.find(p => player === p);
@@ -284,12 +303,12 @@ function updatePlayerInList(player: ServerPlayer, fn: (player: ServerPlayer) => 
     return copy;
 }
 
-function getPlayerAtSeat(seat: number, players: ServerPlayer[]): ServerPlayer {
+function getPlayerAtSeat(seat: number, players: Player[]): Player {
     return players.find(player => player.seat === seat);
 }
 
-function getPlayerAfter(player: Player, players: ServerPlayer[]): ServerPlayer {
-    const playerSorter = (a: ServerPlayer, b: ServerPlayer) => {
+function getPlayerAfter(player: Player, players: Player[]): Player {
+    const playerSorter = (a: Player, b: Player) => {
         if (a.seat < b.seat) {
             return -1;
         }
@@ -306,7 +325,7 @@ function getPlayerAfter(player: Player, players: ServerPlayer[]): ServerPlayer {
 }
 
 
-function getActivePlayerAfter(after: Player, players: ServerPlayer[]): ServerPlayer {
+function getActivePlayerAfter(after: Player, players: Player[]): Player {
     let nextPlayer = getPlayerAfter(after, players);
     while (nextPlayer.status !== 'PLAYING') {
         nextPlayer = getActivePlayerAfter(nextPlayer, players);
@@ -314,14 +333,22 @@ function getActivePlayerAfter(after: Player, players: ServerPlayer[]): ServerPla
     return nextPlayer;
 }
 
-function getActivePlayers(players: ServerPlayer[]): ServerPlayer[] {
+function getActivePlayers(players: Player[]): Player[] {
     return players.filter(p => p.status === 'PLAYING');
 }
 
-function getNumberActivePlayers(players: ServerPlayer[]): number {
+function getNumberActivePlayers(players: Player[]): number {
     return getActivePlayers(players).length;
 }
 
-function createDeck() {
-    throw new Error('Not implemented');
+function createDeck(): string[] {
+    const ranks = 'A23456789TJQK';
+    const suits = 'hcds';
+    const cards = [];
+    for (let r = 0; r < ranks.length; r++) {
+        for (let s = 0; s < suits.length; s++) {
+            cards.push(ranks[r] + suits[s]);
+        }
+    }
+    return cards;
 }

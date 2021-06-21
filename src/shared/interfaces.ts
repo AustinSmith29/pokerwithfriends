@@ -1,8 +1,10 @@
 type PlayerStatus = 'LOBBY' | 'PLAYING' | 'FOLD' | 'STANDING';
 export interface Player {
+    socketId: string;
     name: string;
     stack: number;
     seat: number;
+    hand: string[];
     status: PlayerStatus;
 }
 
@@ -19,16 +21,9 @@ export interface PlayerAction {
     amount?: number;
 }
 
-//TODO: Replace
-export interface Card {
-    suit: number;
-    rank: number;
-}
-
 export interface GameState {
     players: Player[];
-    deck: Card[];
-    board: Card[];
+    board: string[];
     sitRequests: SitRequest[];
     dealer: Player | undefined;
     pots: {amount: number, who: Player[]}[]; // Index 0 pot is always main pot

@@ -1,12 +1,10 @@
 import * as Phaser from 'phaser';
-import {Client, GameState} from './client';
-import {PlayerManagementModal} from './ui/PlayerManagementModal';
-import {TextButton} from './ui/TextButton';
-import {Seat, SeatStatus} from './ui/Seat';
-import {Modal} from './ui/Modal';
-import {Frame, Row, Column} from './ui/Container.js';
-import {Board} from './ui/Board';
-import {ChatBox} from './ui/ChatBox';
+import { Client } from './client';
+import { PlayerManagementModal } from './ui/PlayerManagementModal';
+import { TextButton } from './ui/TextButton';
+import { Seat, SeatStatus } from './ui/Seat';
+import { Board } from './ui/Board';
+import { ChatBox } from './ui/ChatBox';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
     active: true,
@@ -45,10 +43,11 @@ class PokerGame extends Phaser.Scene {
         this.load.image('card_back', 'assets/cards/card_back.svg');
         const suits = ['clubs', 'hearts', 'spades', 'diamonds'];
         const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+        const cardranks = '23456789TJQKA';
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 13; j++) {
                 const filename = `assets/cards/${ranks[j]}_of_${suits[i]}.svg`;
-                this.load.image(`${ranks[j]}_${suits[i]}`, filename);
+                this.load.image(`${cardranks[j]}${suits[i][0]}`, filename);
             }
         }
     }

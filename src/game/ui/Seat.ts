@@ -3,7 +3,7 @@ import {TextButton} from './TextButton';
 import {Modal} from './Modal';
 import {Frame, Row, Column} from './Container.js';
 import {EventObserver, Event, EventType, Client} from '../client';
-import {Player} from '../../server'; // TODO: EWWWW. Should be seperate. Or at least in an "intermediary" file
+import {Player} from '../../shared/interfaces';
 import {PlayerActionControls} from './PlayerAction';
 
 export enum SeatStatus {
@@ -13,10 +13,6 @@ export enum SeatStatus {
     STANDING
 };
 
-interface Card {
-    rank: number;
-    suit: number;
-}
 
 class CardHolder {
     private x: number;
@@ -35,7 +31,7 @@ class CardHolder {
         this.card2_image = null;
     } 
 
-    setHand(hand: Card[]) {
+    setHand(hand: string[]) {
         //TODO: Change card types from Images to Sprites so we aren't constantly creating and deleting...
         //      we can just call setTexture.
         if (!hand || hand.length == 0) {
@@ -51,19 +47,13 @@ class CardHolder {
         }
 
         const [card1, card2] = hand;
-        if (card1.rank < 0 || card2.rank < 0) {
+        if (card1 === 'X' || card2 === 'X') {
             this.card1_image = this.scene.add.image(this.x-20, this.y, 'card_back').setScale(0.40); 
             this.card2_image = this.scene.add.image(this.x + 20, this.y, 'card_back').setScale(0.40);
         }
         else {
-            //TODO: God awful ugly... but its 12:02 am and I just wanna see if this works so I can go to bed. Obviously we don't want to duplicate this code that is elsewhere
-            // in the codebase. I just figure when I do my big refactor this will be changed so fuck it here it is.
-            const suits = ['clubs', 'hearts', 'spades', 'diamonds'];
-            const ranks = [ '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
-            const card1_asset = `${ranks[card1.rank]}_${suits[card1.suit]}`
-            const card2_asset = `${ranks[card2.rank]}_${suits[card2.suit]}`
-            this.card1_image = this.scene.add.image(this.x-20, this.y, card1_asset).setScale(0.40);
-            this.card2_image = this.scene.add.image(this.x+20, this.y, card2_asset).setScale(0.40);
+            this.card1_image = this.scene.add.image(this.x-20, this.y, card1).setScale(0.40);
+            this.card2_image = this.scene.add.image(this.x+20, this.y, card2).setScale(0.40);
         }
     }
 
@@ -213,7 +203,7 @@ export class Seat extends Phaser.GameObjects.GameObject implements EventObserver
             const isSeatTaken = state.players.map(player => player.seat).includes(this.id);
             const isSeatRequested = state.sitRequests.map(request => request.seat).includes(this.id);
             const isMyTurn = (this.client.socket.id === state.whoseTurn?.socketId);
-            const isDealer = (state.dealerPosition === this.id);
+            const isDealer = (state.dealer && state.dealer.seat === this.id);
             if (isSeatTaken) {
                 const player = state.players.find(player => player.seat === this.id);
                 this.playerInfo.display(player);

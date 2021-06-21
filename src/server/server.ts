@@ -1,20 +1,19 @@
 import { GameState } from './gamestate';
-import { ServerPlayer } from './types';
-import { SitRequest, PlayerAction, Card } from '../shared/interfaces';
+import { SitRequest, PlayerAction, Player } from '../shared/interfaces';
 
 const DEBUG = true;
 
 interface PokerGameI {
     state: GameState;
     roomName: string;
-    host: ServerPlayer | undefined;
+    host: Player | undefined;
     password?: string;
     io: SocketIO.Server;
 }
 
 export class PokerGame implements PokerGameI {
     state: GameState;
-    host: ServerPlayer | undefined;
+    host: Player | undefined;
     password?: string;
     roomName: string;
     io: SocketIO.Server;
@@ -27,7 +26,7 @@ export class PokerGame implements PokerGameI {
         this.io = ioServer;
     }
 
-    setHost(player: ServerPlayer) {
+    setHost(player: Player) {
         this.host = player;
     }
 
@@ -36,17 +35,22 @@ export class PokerGame implements PokerGameI {
         this.state = this.state.seatPlayer(this.host);
     }
 
-    tableSync() {
+    addPlayerToLobby(socket: SocketIO.Socket) {
+        const player: Player = { name: 'Watcher', stack: 0, hand: [], seat: undefined, status: 'LOBBY', socketId: socket.id };
+        this.state = this.state.addPlayer(player);
+    }
+
+    tableSync(state: GameState) {
         this.io.in(this.roomName).emit('TABLESYNC', {
-            players: [...this.state.state.players],
-            sitRequests: [...this.state.state.sitRequests],
-            whoseTurn: this.state.state.whoseTurn,
-            board: [...this.state.state.board],
-            dealer: this.state.state.dealer,
-            smallBlind: this.state.state.smallBlind,
-            bigBlind: this.state.state.bigBlind,
-            bets: this.state.state.bets,
-            pots: this.state.state.pots,
+            players: [...state.state.players],
+            sitRequests: [...state.state.sitRequests],
+            whoseTurn: state.state.whoseTurn,
+            board: [...state.state.board],
+            dealer: state.state.dealer,
+            smallBlind: state.state.smallBlind,
+            bigBlind: state.state.bigBlind,
+            bets: state.state.bets,
+            pots: state.state.pots,
         });
     }
 
@@ -58,13 +62,16 @@ export class PokerGame implements PokerGameI {
         if (!this.host.socketId) {
             this.bindHost(socket.id);
         }
-        game.tableSync();
+        else {
+            this.addPlayerToLobby(socket);
+        }
+        game.tableSync(state);
 
         socket.on('CHAT', function (message: string) {
-            console.log(message.substr(0, 5));
             if (message === 'dump') {
-                game.io.sockets.connected[socket.id].emit('CHAT', JSON.stringify(state));
-                console.log(state);
+                let copy = {...state};
+                delete copy.state.deck; // Takes up too much screen real estate
+                console.log(copy);
             }
             else {
                 game.io.in(game.roomName).emit('CHAT', message);
@@ -73,34 +80,42 @@ export class PokerGame implements PokerGameI {
 
         socket.on('SIT_REQUEST', function (request: SitRequest) {
             state = state.addSitRequest(request);
-            game.tableSync();
+            game.tableSync(state);
         });
 
         socket.on('SIT_ACCEPT', function(request: SitRequest) {
             state = state.acceptSitRequest(request);
-            game.tableSync();
+            game.tableSync(state);
         });
 
-        socket.on('DEAL_HAND', function() {
-            state = state.startNewHand();
+        socket.on('START_GAME', function() {
+            const players = state.state.players;
+            const randomDealer = players[players.length * Math.random() | 0];
+            state = state.startNewHand(randomDealer);
+            game.tableSync(state);
         });
 
         socket.on('TURN_END', function(action: PlayerAction) {
-            const whoSentMessage = state.players.find((player: ServerPlayer) => player.socketId === socket.id);
+            const whoSentMessage = state.state.players.find((player: Player) => player.socketId === socket.id);
+            console.log(whoSentMessage);
 
-            if (action.action == 'check') {
+            if (action.type == 'CHECK') {
+                console.log('Check');
                 state = state.doCheck(whoSentMessage);
             }
-            else if (action.action == 'fold') {
+            else if (action.type == 'FOLD') {
+                console.log('Fold');
                 state = state.doFold(whoSentMessage);
             }
-            else if (action.action == 'call') {
+            else if (action.type == 'CALL') {
+                console.log('Call');
                 state = state.doCall(whoSentMessage);
             }
-            else if (action.action == 'bet') {
+            else if (action.type == 'BET') {
+                console.log('Bet');
                 state = state.doBet(whoSentMessage, action.amount);
             }
-            game.tableSync();
+            game.tableSync(state);
         });
     }
 }

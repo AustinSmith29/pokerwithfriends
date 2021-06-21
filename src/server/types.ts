@@ -1,9 +1,4 @@
-import { Player, GameState, Card } from '../shared/interfaces';
-
-export interface ServerPlayer extends Player {
-    socketId: string;
-    hand: Card[];
-}
+import { Player, GameState } from '../shared/interfaces';
 
 type GameStatus = 
     'WAITING' |
@@ -14,9 +9,9 @@ type GameStatus =
     'RIVER'   |
     'SHOWDOWN';
 
-export interface ServerGameState extends Omit<GameState, 'players'> {
+export interface ServerGameState extends GameState {
     status: GameStatus;
-    players: ServerPlayer[];
+    deck: string[];
     // Next two members help keep track of when to advance to next betting round.
     numTurnsCompleted: number;
     numPlayersAtRoundStart: number;

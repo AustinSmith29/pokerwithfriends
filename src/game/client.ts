@@ -1,15 +1,6 @@
-import {Player, SitRequest} from '../server';
+import {Player, SitRequest, GameState, PlayerAction} from '../shared/interfaces';
 
 const io = require('socket.io-client');
-
-export interface GameState {
-    players: Player[];
-    sitRequests: SitRequest[];
-    localPlayerId: string;
-    whoseTurn?: Player;
-    board: {rank: number, suit: number}[];
-    dealerPosition: number;
-}
 
 export interface Observer<T> {
     onNotify: (thing: T) => void;
@@ -43,10 +34,12 @@ export interface StateSubject {
 }
  */
 
-export interface EndTurnMessage {
-    action: string;
-    amount?: number;
-}
+const names = [
+    'Austin Da GOAT',
+    'Xander Da Fool',
+    'Felipe',
+    'Dingus Khan'
+];
 
 export class Client implements EventSubject {
     private roomName: string;
@@ -56,17 +49,20 @@ export class Client implements EventSubject {
 
     constructor(roomName: string) {
         this.roomName = roomName;
-        const client = this;
         this.socket = io();
-        this.socket.emit('JOIN', {roomName: roomName}, (id: string) => client.localState = {...client.localState, localPlayerId: id});
+        this.socket.emit('JOIN', { roomName }, (id: string) => console.log(`CLIENT JOINED WITH ID ${id}`));
         this._bindClientEvents();
 
         this.localState = {
             players: [],
             sitRequests: [],
-            localPlayerId: undefined,
+            whoseTurn: undefined,
             board: [],
-            dealerPosition: 0,
+            dealer: undefined,
+            smallBlind: undefined,
+            bigBlind: undefined,
+            bets: [],
+            pots: []
         };
 
         this.eventObservers = [];
@@ -77,14 +73,7 @@ export class Client implements EventSubject {
         const client = this;
         socket.on('TABLESYNC', (serverState) => {
             // Merge server and client state
-            client.localState = {
-                ...client.localState,
-                sitRequests: serverState.sitRequests, 
-                players: serverState.players, 
-                whoseTurn: serverState?.whoseTurn, 
-                board: serverState?.board,
-                dealerPosition: serverState?.dealerPosition,
-            };
+            client.localState = serverState;
             client.notify({type: EventType.TableSync, data: client.localState});
         });
 
@@ -110,23 +99,25 @@ export class Client implements EventSubject {
         this.socket.emit('CHAT', message);
     }
 
-    endTurn(data: EndTurnMessage) {
+    endTurn(data: PlayerAction) {
         this.socket.emit('TURN_END', data);
     }
 
     sit(seat: number) {
         const socketId = this.socket.id;
-        this.socket.emit('SIT_REQUEST', {seat: seat, name: 'JoeTest', stack: 1000, socketId});
+        // TEMPORARY HACK FOR DEBUG PURPOSES
+        const randomName = names[names.length * Math.random() | 0];
+        this.socket.emit('SIT_REQUEST', {seat: seat, name: randomName, stack: 1000, socketId});
     }
 
     acceptSitRequest(sitRequest: SitRequest) {
         const roomName = this.roomName;
         this.localState.sitRequests = this.localState.sitRequests.filter(req => req.socketId != sitRequest.socketId);
-        this.localState.players.push({name: sitRequest.name, stack: sitRequest.stack, seat: sitRequest.seat, socketId: sitRequest.socketId, status: 'PLAYING'});
+        this.localState.players.push({name: sitRequest.name, stack: sitRequest.stack, hand: [], socketId: sitRequest.socketId, seat: sitRequest.seat, status: 'PLAYING'});
         this.socket.emit('SIT_ACCEPT', sitRequest);
     }
 
     startGame() {
-        this.socket.emit('DEAL_HAND', {roomName: this.roomName});
+        this.socket.emit('START_GAME', {roomName: this.roomName});
     }
 }

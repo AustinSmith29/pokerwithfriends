@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import url from 'url';
 import { GameTable, PokerGame } from './server/server';
-import { ServerPlayer } from './server/types';
+import { Player } from './shared/interfaces';
 
 //TODO: Add config driven build. i.e a dev build for local machine, and a production build.
 
@@ -20,7 +20,7 @@ io.listen(server);
 
 const gameTable = new GameTable();
 gameTable.addGameSession('Test', new PokerGame(10, 20, 1000, '', 'Test', io));
-const player: ServerPlayer = {name: 'TestHost', stack: 1000, seat: 0, socketId: undefined, hand: [], status: 'PLAYING'};
+const player: Player = {name: 'TestHost', stack: 1000, seat: 0, socketId: undefined, hand: [], status: 'PLAYING'};
 gameTable.getGame('Test').setHost(player);
 
 app.get('/', function(req, res) {
@@ -34,7 +34,7 @@ app.post('/', function(req, res) {
         console.log(`Creating room "${roomName}".`);
         gameTable.addGameSession(roomName, game);
         const {hostName, stack} = rest;
-        const player: ServerPlayer = {name: hostName, stack, seat: 0, socketId: undefined, hand: [], status: 'PLAYING'};
+        const player: Player = {name: hostName, stack, seat: 0, socketId: undefined, hand: [], status: 'PLAYING'};
         game.setHost(player);
     }
     res.redirect(url.format({

@@ -1,6 +1,6 @@
-import {TextButton} from './TextButton';
-import {SliderInput} from './primitives/SliderInput';
-import {Client} from '../client';
+import { TextButton } from './TextButton';
+import { SliderInput } from './primitives/SliderInput';
+import { Client } from '../client';
 
 export class PlayerActionControls {
     private uiControls: {[name: string]: TextButton | SliderInput };
@@ -18,9 +18,9 @@ export class PlayerActionControls {
     constructor(scene: Phaser.Scene, client: Client) {
         this.client = client;
         this.uiControls = {
-            'check': new TextButton(scene, 500, 720, 'Check', () => client.endTurn({'action': 'check'})),
-            'fold':  new TextButton(scene, 580, 720, 'Fold', () => client.endTurn({'action': 'fold'})),
-            'call':  new TextButton(scene, 650, 720, 'Call', () => client.endTurn({'action': 'call'})),
+            'check': new TextButton(scene, 500, 720, 'Check', () => client.endTurn({'type': 'CHECK'})),
+            'fold':  new TextButton(scene, 580, 720, 'Fold', () => client.endTurn({'type': 'FOLD'})),
+            'call':  new TextButton(scene, 650, 720, 'Call', () => client.endTurn({'type': 'CALL'})),
             'bet':   new TextButton(scene, 740, 720, 'Bet', () => this.doBet()),
             'raise': new TextButton(scene, 790, 720, 'Raise', () => this.doRaise()),
             'betSlider': new SliderInput(scene, 500, 650, 200, 75, (val: number) => this.setBet(val))
@@ -34,7 +34,7 @@ export class PlayerActionControls {
     }
 
     doBet() {
-        this.client.endTurn({'action': 'bet', 'amount': this.wagerAmount});
+        this.client.endTurn({'type': 'BET', 'amount': this.wagerAmount});
     }
 
     doRaise() {
