@@ -89,17 +89,19 @@ export class GameState {
     startNewHand(dealerOverride?: Player): GameState {
         const freshState = this.resetPlayerStatuses().resetPot();
         const moveAndCollectBlinds = freshState.moveBlinds(dealerOverride).collectBlinds();
-        const underTheGun = getPlayerAfter(moveAndCollectBlinds.state.bigBlind.who,
-                                           moveAndCollectBlinds.state.players);
+        const underTheGun = getActivePlayerAfter(moveAndCollectBlinds.state.bigBlind.who,
+                                                 moveAndCollectBlinds.state.players);
+        const deck = createDeck();
         return this.NewState({
             ...moveAndCollectBlinds.state,
             board: [],
-            deck: createDeck(), 
-            bets: [{ player: this.state.bigBlind.who, amount: this.state.bigBlind.amount }],
+            deck, 
+            bets: [{player: this.state.smallBlind.who, amount: this.state.smallBlind.amount} ,{ player: this.state.bigBlind.who, amount: this.state.bigBlind.amount }],
             status: 'PREFLOP',
             whoseTurn: underTheGun,
             numTurnsCompleted: 0,
-            numPlayersAtRoundStart: getNumberActivePlayers(this.state.players)
+            numPlayersAtRoundStart: getNumberActivePlayers(this.state.players),
+            players: this.state.players.map(player => ({...player, hand: [deck.pop(), deck.pop()]}))
         });
     }
 
@@ -121,9 +123,9 @@ export class GameState {
     moveBlinds(dealerOverride?: Player): GameState {
         if (this.state.players.length < 2) return this;
 
-        const newDealer = (dealerOverride) ? dealerOverride : getPlayerAfter(this.state.dealer, this.state.players);
-        const newSb = getPlayerAfter(newDealer, this.state.players);
-        const newBb = getPlayerAfter(newSb, this.state.players);
+        const newDealer = (dealerOverride) ? dealerOverride : getActivePlayerAfter(this.state.dealer, this.state.players);
+        const newSb = getActivePlayerAfter(newDealer, this.state.players);
+        const newBb = getActivePlayerAfter(newSb, this.state.players);
         return this.NewState({
             ...this.state,
             dealer: newDealer,
@@ -143,10 +145,10 @@ export class GameState {
     collectChipsFromPlayer(player: Player, amount: number): GameState {
         if (amount <= 0) return this;
         const chips = (amount > player.stack) ? player.stack : amount;
-        const pot = this.state.pots[this.state.pots.length-1];
+        const pot = JSON.parse(JSON.stringify(this.state.pots[this.state.pots.length-1]));
         pot.amount += chips;
-        const pots = [...this.state.pots];
-        pots.splice(0, -1, pot);
+        const pots = JSON.parse(JSON.stringify(this.state.pots));
+        pots.splice(this.state.pots.length-1, 1, pot);
         return this.NewState({ 
             ...this.state,
             pots,
@@ -205,9 +207,6 @@ export class GameState {
     }
 
     doCheck(player: Player): GameState {
-        //TODO: Check if checking is valid action to player
-        console.log(player);
-        console.log(this.state.whoseTurn);
         if (this.state.whoseTurn !== player) return this;
 
         console.log('here');
@@ -265,6 +264,7 @@ export class GameState {
                 whoseTurn: getActivePlayerAfter(this.state.whoseTurn, this.state.players),
             })
             .collectChipsFromPlayer(player, player.stack);
+            .advanceRoundIfOver();
         }
         else {
             return this.NewState({
@@ -296,18 +296,20 @@ export class GameState {
 
 // Updates the player in players by running function and returns new list of players with updated state.
 function updatePlayerInList(player: Player, fn: (player: Player) => void, players: Player[]): Player[] {
-    // TODO: I strongly suspect there may be weird reference issues with this... figure out how/if I need to solve it
-    const copy = [...players];
-    const who = copy.find(p => player === p);
+    // Hack to deep copy players in one line... was having nasty reference errors.
+    // Is it efficient... no. But the players array should never really exceed 10-12 (unless there is
+    // a loooooooooot of spectators for a specific game.
+    const copy = JSON.parse(JSON.stringify(players));
+    const who = copy.find((p: Player) => player.seat === p.seat);
     fn(who);
     return copy;
 }
 
-function getPlayerAtSeat(seat: number, players: Player[]): Player {
+export function getPlayerAtSeat(seat: number, players: Player[]): Player {
     return players.find(player => player.seat === seat);
 }
 
-function getPlayerAfter(player: Player, players: Player[]): Player {
+export function getPlayerAfter(player: Player, players: Player[]): Player {
     const playerSorter = (a: Player, b: Player) => {
         if (a.seat < b.seat) {
             return -1;
@@ -325,7 +327,7 @@ function getPlayerAfter(player: Player, players: Player[]): Player {
 }
 
 
-function getActivePlayerAfter(after: Player, players: Player[]): Player {
+export function getActivePlayerAfter(after: Player, players: Player[]): Player {
     let nextPlayer = getPlayerAfter(after, players);
     while (nextPlayer.status !== 'PLAYING') {
         nextPlayer = getActivePlayerAfter(nextPlayer, players);
@@ -350,5 +352,6 @@ function createDeck(): string[] {
             cards.push(ranks[r] + suits[s]);
         }
     }
+    cards.sort(() => Math.random() - 0.5); // shuffle cards
     return cards;
 }
