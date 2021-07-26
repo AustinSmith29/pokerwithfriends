@@ -113,7 +113,7 @@ describe('Preflop Betting Round', () => {
     const preflop = mockGame.startNewHand(players[0]);
 
     it('Actions should maintain state independence.', () => {
-        const callState = preflop.doCall(players[1]);
+        const callState = preflop.doCall(players[0]);
         assert.notEqual(callState.state.whoseTurn, preflop.state.whoseTurn);
     });
     /*

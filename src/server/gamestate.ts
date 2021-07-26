@@ -236,11 +236,12 @@ export class GameState {
         if (this.state.whoseTurn !== player) return this;
         if (amount < this.state.smallBlind.amount) return this;    
 
-        const bets = this.state.bets;
+        const pot = JSON.parse(JSON.stringify(this.state.pots[this.state.pots.length-1]));
+        const bets = JSON.parse(JSON.stringify(this.state.bets));
         if (bets.length && amount < bets[bets.length - 1].amount * 2) return this; // Raises must be 2x last bet
         return this.NewState({
             ...this.state,
-            bets: this.state.bets.concat([{player, amount}]),
+            bets: bets.concat([{player, amount}]),
             numTurnsCompleted: this.state.numTurnsCompleted + 1,
             whoseTurn: getActivePlayerAfter(this.state.whoseTurn, this.state.players),
         })
@@ -250,7 +251,7 @@ export class GameState {
     }
 
     doCall(player: Player): GameState {
-        if (this.state.whoseTurn !== player) return this;
+        if (this.state.whoseTurn.seat !== player.seat) return this;
 
         const bets = this.state.bets;
         if (!bets.length) return this;
@@ -263,7 +264,7 @@ export class GameState {
                 numTurnsCompleted: this.state.numTurnsCompleted + 1,
                 whoseTurn: getActivePlayerAfter(this.state.whoseTurn, this.state.players),
             })
-            .collectChipsFromPlayer(player, player.stack);
+            .collectChipsFromPlayer(player, player.stack)
             .advanceRoundIfOver();
         }
         else {
@@ -272,7 +273,8 @@ export class GameState {
                 numTurnsCompleted: this.state.numTurnsCompleted + 1,
                 whoseTurn: getActivePlayerAfter(this.state.whoseTurn, this.state.players),
             })
-            .collectChipsFromPlayer(player, lastBet.amount);
+            .collectChipsFromPlayer(player, lastBet.amount)
+            .advanceRoundIfOver();
         }
     }
 
